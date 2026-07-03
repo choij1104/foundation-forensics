@@ -1,0 +1,79 @@
+# Changelog
+
+All notable changes to Foundation Forensics.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [3.0.2] — 2026-07-03
+
+### Added
+- **Visual Exhibits** for §3.6 (screen + PDF), auto-generated from segment data:
+  - *Exhibit A* — Plan overlay: sewer routing color-coded by slope classification with legend.
+  - *Exhibit B* — Per-segment side-view slope profiles: as-designed (dashed) vs. current
+    (solid, severity-colored) vs. IPC minimum (dotted); settlement arrows with Δ values at
+    each end; auto vertical-exaggeration note; back-pitch pooling zone shading.
+  - *Exhibit C* — Bell-and-spigot joint separation principle diagram with the property's
+    worst-segment values (material joint tolerance vs. measured movement, separation %).
+- Exhibits render in §3.6.4 on screen and as PDF subsection "3.6.4 Visual Exhibits".
+
+## [3.0.1] — 2026-07-02
+
+### Fixed
+- **§7.0 Visit Comparison** now matches measurement points by their actual field names
+  (`code` / `reading`); previously matched on nonexistent `label` / `elevation`, so no
+  points ever matched between visits.
+- **+ Monitoring Visit** point-grid seeding copies `code`/`location` and resets `reading`
+  (previously produced undefined labels).
+- **Raw Data Export (P.E. Review)** elevation CSV now emits real point codes and readings.
+
+### Added
+- `foundation_forensics_v3_demo_preloaded.html` — briefing/simulation build with two
+  preloaded visits (Initial Evaluation + 6-Month Monitoring), sample hydrostatic/CCTV
+  field-test evidence, and demo-scoped localStorage key (does not touch real app data).
+  Firm rebranded to a neutral forensic-evaluator placeholder (repair-company logo/seal removed).
+- `build_demo.js` — reproducible demo build script (extracts v2 demo data, migrates to
+  v3 schema, synthesizes the monitoring visit).
+- Mobile-responsive layout: horizontally scrollable tables, single-column forms,
+  44px touch targets, 16px inputs (prevents iOS focus zoom), stacked toolbars,
+  full-width dashboard cards, and a 480px small-phone tier.
+
+## [3.0.0] — 2026
+
+Foundation Forensics v3.0 is a re-architecture of the earlier Foundation Inspection System v2, oriented around independent forensic evaluation rather than repair-contractor pre-repair documentation.
+
+### Added
+
+- **Multi-visit time-series data model.** Every project now supports an array of visits (`project.visits[]`), each with its own report, site conditions, survey, scope, elevation points, observations, plan points, and plumbing analysis. House-level fields (property, client, foundation) remain shared across visits. Three visit types are supported: `initial`, `monitoring`, `post-repair`.
+- **Visit Bar UI.** New selector between the back-bar and the section-nav lets the inspector switch visits, add a Monitoring Visit or a Post-Repair Survey, and edit visit metadata. Follow-up visits are pre-seeded with the previous visit's plan image, sewer routing, and measurement-point positions (with elevations reset to zero for re-measurement).
+- **§ 7.0 Visit Comparison.** New report section computes interval days/months, per-point elevation delta, per-point rate (in/month), peak movement rate, mean movement rate, and peak plumbing joint-risk delta between any two selected visits. Includes an interpretation banner tuned to Texas expansive-soil residential context.
+- **Per-segment field-test evidence.** § 3.6 Plumbing Impact table now has an Evidence column. Attachments per segment: CCTV footage/still, hydrostatic test PDF, smoke test photo, or free-text field note. Each attachment is bound to a specific sewer segment.
+- **Raw-data export for P.E. review.** New "Export Raw Data (P.E. Review)" button in § 6.7 emits elevation grid + plumbing segments as a CSV bundle wrapped in a header identifying property, firm, and inspector. Explicit statement in the export file that no engineering opinion is asserted — the file is designed for a licensed Texas Professional Engineer to review and issue a separate signed and sealed opinion.
+- **Automatic v2 migration.** Legacy `localStorage` key `foundation_inspection_v2_data` is detected on load and migrated into the v3 schema. Legacy JSON export types (`foundation_inspection_single_project`, `foundation_inspection_full_backup`) are accepted by the import dialog and migrated in place.
+
+### Changed
+
+- **Report disclaimer rewritten** to declare three explicit legal frames: non-repair, not-engineering-opinion (Texas Occupations Code Ch. 1001; TBPE), not-claim-negotiation (Texas Insurance Code). Texas DTPA § 17.49(c) exemption preserved.
+- **Branding.** "Foundation Inspection System" → "Foundation Forensics". Subtitle now reads: "ASCE Level B Evaluation · Independent Technical Documentation · Multi-Visit Monitoring".
+- **Storage key.** `foundation_inspection_v2_data` → `foundation_forensics_v3_data`. v2 key is retained as read-only legacy source for migration.
+- **JSON export type strings.** `foundation_inspection_single_project` → `foundation_forensics_single_project`; `foundation_inspection_full_backup` → `foundation_forensics_full_backup`. v2 strings still accepted on import.
+- **`createEmptyProjectData()`** restructured. Visit-scoped fields moved into the new `visits[]` array; house-level fields remain at project level.
+- **`snapshotCurrentProject()`** / **`loadProjectIntoActive()`** rewritten to be visit-aware.
+
+### Preserved
+
+- All existing v2 functionality: dashboard, § 0.0 through § 6.0 sections, live calculation engine, plan-view contour rendering, sub-slab plumbing impact modeling, PDF report generation, JSON single-project export, full-backup export, browser localStorage auto-save.
+- The `project` global variable retains its flat structure (the currently-loaded visit's data is on it directly), so all existing UI code and PDF export logic works unchanged.
+
+### Migration Path from v2
+
+No user action required. On first load, if v3 storage is empty and v2 storage exists, v2 projects are silently wrapped into v3 shape with a single "Initial Evaluation (migrated from v2)" visit each. v2 JSON files can be imported directly and are migrated on the way in.
+
+See [`docs/migration_from_v2.md`](docs/migration_from_v2.md) for full details.
+
+---
+
+## [2.0.0] — 2026 (baseline — Foundation Inspection System)
+
+- Multi-project dashboard, ASCE Level B 9-section workflow (§ 0.0 – § 6.0), sub-slab plumbing impact module, live calculation engine, PDF report generator, DTPA § 17.49(c) disclaimer.
