@@ -1,67 +1,127 @@
-# Foundation Forensics
-## An Independent Evaluation Platform for Residential Foundation Forensics
+# Changelog
+
+All notable changes to Foundation Forensics.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-### What It Is
+## [3.2.0] — 2026-08-20
 
-A single-file, offline-capable web application that produces ASCE Level B foundation evaluation reports for residential properties, engineered for **independent forensic evaluation firms** operating strictly as **technical documentation providers**. The application supports:
+### Changed — forensic positioning (report language)
+- **All auto-generated repair-prescriptive language replaced with forensic-neutral findings.**
+  §5.2 is now "Classification of Measured Condition" rather than "Diagnosis"; tier text states
+  what was measured and refers causation and remedial scoping to a licensed P.E. Removed
+  auto-generated piling specifications, "remediation is required/recommended", and
+  "schedule a repair consultation" from the screen analysis, PDF report, and client summary.
+  *All input fields are preserved* — an inspector may still enter any narrative manually.
+- **"Joint separation probability (%)" renamed to "joint-stress index"** throughout (table,
+  exhibits, PDF, methodology). The value is a comparative screening scale used to prioritize
+  field verification, and is now explicitly stated not to be a statistical probability.
+- Client-summary next steps reordered around engineer review, evidence preservation, and
+  claim-process orientation; explicit statement that this firm does not negotiate claims.
+- Insurance note reframed: the index indicates a line warranting verification, not a finding
+  that a leak exists.
 
-- Multi-visit time-series monitoring of the same property (initial evaluation → monitoring follow-ups → post-repair verification)
-- Elevation surveying with live calculations and severity classification
-- Interactive floor-plan view with automatic settlement contour rendering
-- Sub-slab plumbing impact assessment with per-segment field-test evidence integration (CCTV, hydrostatic, smoke test)
-- Movement-rate analysis between any two visits
-- Raw-data export for licensed Texas Professional Engineer review
-- PDF report generation with a three-frame legal disclaimer (non-repair · not engineering opinion · not claim negotiation)
+### Changed — license
+- **MIT → proprietary license.** All rights reserved; software is licensed, not sold.
+  Report output remains the property of the licensee/client. Prior MIT-published versions
+  are unaffected (that grant cannot be retroactively revoked).
 
-The system runs from a single HTML file. No server, no account, no subscription, no internet required after first load.
+### Added
+- Copyright banner in the application source header; copyright and scope-of-practice line in
+  the application footer; per-page copyright and work-product notice in the PDF footer.
+- Demo/simulation file enriched: §2.3.1 geology populated (Houston Black clay, PI 40–60,
+  LEP 9.5, Very High shrink-swell, dated SSURGO-style source citation), firm-own report
+  numbering (FF-20260119-001), and the full §1/§5 narrative rewritten in forensic-neutral
+  voice so the briefing file demonstrates the correct positioning end to end.
+
+## [3.1.0] — 2026-07-05
+
+### Added
+- **Discrete settlement bands + iso-settlement contours** (screen sewer canvas + PDF
+  Exhibit A): 0.25" fixed bands with a divergent palette (blue = heave, neutral,
+  yellow→red = settlement); marching-squares contour lines at 0.25" intervals with
+  bold labeled 0.50" contours and a dashed zero-movement line; two-row legend on
+  Exhibit A including the band scale.
+- **Site Geology (§2.3.1)** — hybrid published-soil-data integration:
+  - Embedded regional database (~24 Bexar-and-adjacent NRCS soil series with
+    representative shrink-swell class, PI range, LEP, drainage, geologic notes).
+  - One-click **USDA SSURGO fetch**: geocodes the property address (US Census
+    geocoder) → queries Soil Data Access for the parcel's dominant map unit
+    (map unit name, component, PI min–max, LEP, drainage) → caches into the
+    project with a dated source citation.
+  - Geology fields persist per project, carry forward automatically to new visits,
+    and print in the PDF as §2.3.1 with a fixed non-geotechnical disclaimer.
+
+## [3.0.2] — 2026-07-03
+
+### Added
+- **Visual Exhibits** for §3.6 (screen + PDF), auto-generated from segment data:
+  - *Exhibit A* — Plan overlay: sewer routing color-coded by slope classification with legend.
+  - *Exhibit B* — Per-segment side-view slope profiles: as-designed (dashed) vs. current
+    (solid, severity-colored) vs. IPC minimum (dotted); settlement arrows with Δ values at
+    each end; auto vertical-exaggeration note; back-pitch pooling zone shading.
+  - *Exhibit C* — Bell-and-spigot joint separation principle diagram with the property's
+    worst-segment values (material joint tolerance vs. measured movement, separation %).
+- Exhibits render in §3.6.4 on screen and as PDF subsection "3.6.4 Visual Exhibits".
+
+## [3.0.1] — 2026-07-02
+
+### Fixed
+- **§7.0 Visit Comparison** now matches measurement points by their actual field names
+  (`code` / `reading`); previously matched on nonexistent `label` / `elevation`, so no
+  points ever matched between visits.
+- **+ Monitoring Visit** point-grid seeding copies `code`/`location` and resets `reading`
+  (previously produced undefined labels).
+- **Raw Data Export (P.E. Review)** elevation CSV now emits real point codes and readings.
+
+### Added
+- `foundation_forensics_v3_demo_preloaded.html` — briefing/simulation build with two
+  preloaded visits (Initial Evaluation + 6-Month Monitoring), sample hydrostatic/CCTV
+  field-test evidence, and demo-scoped localStorage key (does not touch real app data).
+  Firm rebranded to a neutral forensic-evaluator placeholder (repair-company logo/seal removed).
+- `build_demo.js` — reproducible demo build script (extracts v2 demo data, migrates to
+  v3 schema, synthesizes the monitoring visit).
+- Mobile-responsive layout: horizontally scrollable tables, single-column forms,
+  44px touch targets, 16px inputs (prevents iOS focus zoom), stacked toolbars,
+  full-width dashboard cards, and a 480px small-phone tier.
+
+## [3.0.0] — 2026
+
+Foundation Forensics v3.0 is a re-architecture of the earlier Foundation Inspection System v2, oriented around independent forensic evaluation rather than repair-contractor pre-repair documentation.
+
+### Added
+
+- **Multi-visit time-series data model.** Every project now supports an array of visits (`project.visits[]`), each with its own report, site conditions, survey, scope, elevation points, observations, plan points, and plumbing analysis. House-level fields (property, client, foundation) remain shared across visits. Three visit types are supported: `initial`, `monitoring`, `post-repair`.
+- **Visit Bar UI.** New selector between the back-bar and the section-nav lets the inspector switch visits, add a Monitoring Visit or a Post-Repair Survey, and edit visit metadata. Follow-up visits are pre-seeded with the previous visit's plan image, sewer routing, and measurement-point positions (with elevations reset to zero for re-measurement).
+- **§ 7.0 Visit Comparison.** New report section computes interval days/months, per-point elevation delta, per-point rate (in/month), peak movement rate, mean movement rate, and peak plumbing joint-risk delta between any two selected visits. Includes an interpretation banner tuned to Texas expansive-soil residential context.
+- **Per-segment field-test evidence.** § 3.6 Plumbing Impact table now has an Evidence column. Attachments per segment: CCTV footage/still, hydrostatic test PDF, smoke test photo, or free-text field note. Each attachment is bound to a specific sewer segment.
+- **Raw-data export for P.E. review.** New "Export Raw Data (P.E. Review)" button in § 6.7 emits elevation grid + plumbing segments as a CSV bundle wrapped in a header identifying property, firm, and inspector. Explicit statement in the export file that no engineering opinion is asserted — the file is designed for a licensed Texas Professional Engineer to review and issue a separate signed and sealed opinion.
+- **Automatic v2 migration.** Legacy `localStorage` key `foundation_inspection_v2_data` is detected on load and migrated into the v3 schema. Legacy JSON export types (`foundation_inspection_single_project`, `foundation_inspection_full_backup`) are accepted by the import dialog and migrated in place.
+
+### Changed
+
+- **Report disclaimer rewritten** to declare three explicit legal frames: non-repair, not-engineering-opinion (Texas Occupations Code Ch. 1001; TBPE), not-claim-negotiation (Texas Insurance Code). Texas DTPA § 17.49(c) exemption preserved.
+- **Branding.** "Foundation Inspection System" → "Foundation Forensics". Subtitle now reads: "ASCE Level B Evaluation · Independent Technical Documentation · Multi-Visit Monitoring".
+- **Storage key.** `foundation_inspection_v2_data` → `foundation_forensics_v3_data`. v2 key is retained as read-only legacy source for migration.
+- **JSON export type strings.** `foundation_inspection_single_project` → `foundation_forensics_single_project`; `foundation_inspection_full_backup` → `foundation_forensics_full_backup`. v2 strings still accepted on import.
+- **`createEmptyProjectData()`** restructured. Visit-scoped fields moved into the new `visits[]` array; house-level fields remain at project level.
+- **`snapshotCurrentProject()`** / **`loadProjectIntoActive()`** rewritten to be visit-aware.
+
+### Preserved
+
+- All existing v2 functionality: dashboard, § 0.0 through § 6.0 sections, live calculation engine, plan-view contour rendering, sub-slab plumbing impact modeling, PDF report generation, JSON single-project export, full-backup export, browser localStorage auto-save.
+- The `project` global variable retains its flat structure (the currently-loaded visit's data is on it directly), so all existing UI code and PDF export logic works unchanged.
+
+### Migration Path from v2
+
+No user action required. On first load, if v3 storage is empty and v2 storage exists, v2 projects are silently wrapped into v3 shape with a single "Initial Evaluation (migrated from v2)" visit each. v2 JSON files can be imported directly and are migrated on the way in.
+
+See [`docs/migration_from_v2.md`](docs/migration_from_v2.md) for full details.
 
 ---
 
-### Positioning: Why "Forensics"
+## [2.0.0] — 2026 (baseline — Foundation Inspection System)
 
-The residential foundation inspection market has two dominant categories of producers:
-
-1. **Foundation repair contractors** who inspect the properties they hope to repair.
-2. **General-purpose home inspectors** who touch foundation as one of many systems.
-
-Both categories have a structural conflict of interest with the party who most benefits from a rigorous inspection: the homeowner filing an insurance claim. A repair contractor benefits from finding damage they will bill to fix. A general home inspector at a sale is retained by the transaction, not the long-term owner.
-
-**Foundation Forensics is built for a third category**: an independent evaluation firm that performs *no repair*, *no plumbing remediation*, and *no claim negotiation*. It is retained by the property owner (or on referral from a public adjuster or claims attorney), it produces technical documentation, and it withdraws. Its credibility is that it has no downstream financial stake in the repair decision.
-
-This positioning is not just a marketing framing — it constrains what the software should and should not do, and it shapes every design choice below.
-
----
-
-### How v3 Improves on v2 and on Conventional Reports
-
-Most residential foundation reports in the market are single-snapshot documents produced by repair contractors or general inspectors. Both categories share the same functional limits: static calculation, no spatial visualization, no plumbing impact modeling, no time-series data, no claim documentation pathway. The v2 predecessor of this system fixed those single-snapshot problems for repair contractors. v3 goes further to serve independent forensic use.
-
-**1. Multi-visit time-series monitoring.** Single-snapshot inspections cannot distinguish long-term seasonal drift from acute active movement. A monitoring visit six months after baseline resolves that question. Every project now stores an array of visits, each a full snapshot of § 3.0 – § 6.0 tied to a visit date. § 7.0 Visit Comparison computes per-point elevation delta, per-point rate in inches per month, peak movement rate, and peak plumbing joint-risk delta between any two visits, with an interpretation banner tuned to Texas expansive-soil residential context.
-
-**2. Per-segment field-test evidence.** § 3.6 Sub-Slab Plumbing Impact computes joint-separation probability from differential settlement — an *estimate*. Actual leak confirmation requires CCTV or hydrostatic testing. v3 lets the inspector attach the actual CCTV footage, hydrostatic test PDF, smoke test photos, or field-observation notes directly to the specific segment where the finding was observed. The output is a single report in which every computed joint-risk percentage is either matched with documented field evidence or explicitly awaiting it — which is the artifact insurance adjusters actually need.
-
-**3. Raw-data export for licensed P.E. review.** Under Texas Occupations Code Chapter 1001 and TBPE rules, engineering opinions on causation require a licensed Professional Engineer's seal. The forensic firm cannot issue such opinions and must not. v3 adds a raw-data export button that emits elevation grid and plumbing segments as a CSV bundle in a header explicitly stating that no engineering opinion is asserted. A P.E. consultant receives the file, reviews the data, and issues a separate signed and sealed opinion under their own scope of practice. This gives the forensic firm a clean workflow to service claims that require sealed causation opinions without stepping outside the technical-documentation scope.
-
-**4. Post-repair verification.** In v2, post-repair verification was implicit at best. In v3 it is a first-class visit type. A post-repair survey is added like any other monitoring visit, but flagged separately, and its Visit Comparison output against the pre-repair baseline documents whether the foundation stabilized after remediation. This is not a "clearance report" — no pass/fail judgment is issued — but the elevation-delta and movement-rate data supports the property owner and the shipping contractor in confirming outcome.
-
-**5. Three-frame regulatory disclaimer.** The first page of every report declares three explicit legal frames: the firm performs no repair (a credibility position); the report is not an engineering opinion (TBPE compliance); the report is not claim negotiation (TDI compliance — only licensed public adjusters or attorneys may negotiate). Opinions expressed are professional inspection opinions exempted from professional-services liability under Texas DTPA § 17.49(c).
-
----
-
-### How v3 Improves on Existing Software
-
-The competing categories described in v2 remain valid points of comparison. v3 adds distinct capabilities absent from every existing platform:
-
-- **General-purpose home inspection platforms** (HomeGauge, Spectora, Horizon) target residential resale. They produce checklists across many systems, but perform no elevation calculations, no contour visualization, no plumbing impact analysis, and offer no time-series structure. Subscription-based, internet-dependent.
-- **Foundation-specific reporting templates** (FPA-associated Word/Excel documents, in-house repair-contractor forms) standardize structure but perform no calculations, offer no visualizations, and support no time-series tracking.
-- **Engineering CAD tools** (AutoCAD with structural plug-ins) can produce detailed elevation surveys but require licensed engineering use, thousand-dollar-plus annual licenses, and hours of drafting per project. Not field-deployable.
-
-Foundation Forensics occupies a distinct niche: a **field-deployable, calculation-driven, forensic-oriented, time-series-capable diagnostic tool** designed specifically for independent evaluation workflows. It performs live engineering calculations that general inspection platforms cannot, at a fraction of the time investment of CAD tools, with no recurring cost and no internet dependency, and it uniquely supports multi-visit monitoring and integrated field-test evidence for insurance claim workflows.
-
-For the property owner, the practical result is a report that arrives looking like a forensic evaluation rather than a repair estimate. For the public adjuster or claims attorney, the practical result is a documentation package that binds computed impact probability to actual field-test evidence, presented in a form a licensed Professional Engineer can review and seal without re-doing the underlying survey.
-
----
-
-*Foundation Forensics v3.0 · 2026 · ASCE Level B Compliant · Independent Technical Documentation*
+- Multi-project dashboard, ASCE Level B 9-section workflow (§ 0.0 – § 6.0), sub-slab plumbing impact module, live calculation engine, PDF report generator, DTPA § 17.49(c) disclaimer.

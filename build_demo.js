@@ -1,153 +1,186 @@
-# Foundation Forensics — Usage Guide (v3.0)
+#!/usr/bin/env node
+// Build foundation_forensics_v3_demo_preloaded.html
+// 1) extract the populated `let project = {...}` literal from the v2 demo
+// 2) rebrand firm to Foundation Forensics (non-repair positioning), drop repair-firm logo/seal
+// 3) inject into a copy of foundation_forensics_v3.html
+// 4) give the demo its own localStorage key
+// 5) add a synthesized 6-month monitoring visit + sample field-test evidence in the preload path
 
-## Quick Start
+const fs = require('fs');
 
-**File:** `foundation_forensics_v3.html`
+const V2_DEMO = '/mnt/project/foundation_v2_demo_preloaded.html';
+const V3_APP  = 'foundation_forensics_v3.html';
+const OUT     = 'foundation_forensics_v3_demo_preloaded.html';
 
-1. Download the file
-2. Double-click → opens in your default browser (Chrome, Safari, Edge, Firefox)
-3. Click **+ Create New Project** to begin
-4. Fill in firm info on the first project — it auto-applies to all future projects
+// ---------- helpers ----------
+function extractObjectLiteral(src, anchor) {
+  const start = src.indexOf(anchor);
+  if (start < 0) throw new Error('anchor not found: ' + anchor);
+  let i = src.indexOf('{', start);
+  let depth = 0, inStr = false, strCh = '', esc = false;
+  for (let j = i; j < src.length; j++) {
+    const c = src[j];
+    if (inStr) {
+      if (esc) { esc = false; }
+      else if (c === '\\') { esc = true; }
+      else if (c === strCh) { inStr = false; }
+      continue;
+    }
+    if (c === '"' || c === "'") { inStr = true; strCh = c; continue; }
+    if (c === '{') depth++;
+    else if (c === '}') {
+      depth--;
+      if (depth === 0) return { text: src.slice(i, j + 1), start, endIdx: j + 1 };
+    }
+  }
+  throw new Error('unbalanced braces');
+}
 
-No install, no account, no internet required after first load (jsPDF is fetched from CDN on first PDF export, then cached).
+// ---------- 1) extract v2 demo project ----------
+const v2 = fs.readFileSync(V2_DEMO, 'utf8');
+const { text: projLiteral } = extractObjectLiteral(v2, 'let project = {');
+let demoProject;
+try {
+  demoProject = JSON.parse(projLiteral);
+} catch (e) {
+  // fall back: evaluate as JS literal in a sandbox-ish way
+  demoProject = (new Function('return (' + projLiteral + ');'))();
+}
+console.log('v2 demo extracted. keys:', Object.keys(demoProject).join(', '));
+console.log('points:', (demoProject.points || []).length,
+            '| sample point keys:', Object.keys((demoProject.points || [{}])[0]).join(','));
 
----
+// ---------- 2) rebrand for forensic positioning ----------
+demoProject.firm = {
+  name: 'Foundation Forensics LLC',
+  address: 'San Antonio, TX (demo data)',
+  phone: '(210) 555-0100',
+  email: 'reports@foundationforensics.example',
+  web: 'www.foundationforensics.example',
+  registration: 'Independent technical documentation provider — no repair services'
+};
+if (demoProject.inspector) {
+  demoProject.inspector.title = 'Forensic Foundation Evaluator';
+}
+if (demoProject.assets) {
+  demoProject.assets.logo = null;  // repair-company logo removed
+  demoProject.assets.seal = null;  // repair-company seal removed
+  // keep signature + planImage (planImage is required for the demo plan view)
+}
+if (demoProject.report) {
+  demoProject.report.number = 'FF-20260119-001';   // firm's own numbering, not the v2 repair company's
+  demoProject.report.inspectionType = 'ASCE Level B \u2014 Relative Elevation Survey & Sub-Slab Plumbing Impact Documentation';
+}
 
-## How It Works
+// ---- Site geology: populate the new §2.3.1 fields (Converse, TX / Bexar County) ----
+demoProject.site = demoProject.site || {};
+Object.assign(demoProject.site, {
+  geoMapunit: 'Houston Black clay, 1 to 3 percent slopes (map unit HuB, dominant component Houston Black 85%)',
+  geoShrinkSwell: 'Very High',
+  geoPI: '40\u201360',
+  geoLEP: '9.5',
+  geoDrainage: 'Moderately well drained',
+  geoSource: 'USDA NRCS SSURGO via Soil Data Access, retrieved 2026-01-19 (demonstration data \u2014 verify against Web Soil Survey for any actual engagement)',
+  geoNotes: 'Blackland Prairie vertisol: deep calcareous clay with pronounced seasonal shrink-swell behavior and characteristic gilgai microrelief. Soils of this series undergo substantial volume change with moisture cycling, and published survey data classifies the shrink-swell potential as very high. This is published regional survey data cited for context; it is not a parcel-specific geotechnical determination.'
+});
 
-### Dashboard (First Page)
-- Shows your firm name + all projects as cards
-- Each card displays: address, client, status, severity (Δ in inches), point count
-- Click any card to open that project
+// ---- Convert v2-era repair-prescriptive narrative to forensic-neutral language ----
+if (demoProject.scope) {
+  demoProject.scope.statement =
+    'At the request of the client, this firm performed an ASCE Level B relative elevation survey of the residential slab foundation at the subject property, together with a sub-slab plumbing impact analysis of the traced sewer line. The purpose of this engagement is to document measured conditions as of the survey date in a form suitable for review by a licensed Professional Engineer, a public adjuster, or counsel. This firm performs no repair work, renders no engineering opinion as to causation, and does not negotiate insurance claims.';
+  demoProject.scope.movementFinding =
+    'Relative elevation measurements across 12 points establish a maximum differential of 1.62 in., with the low region concentrated at the northeast quadrant. Interior and exterior distress consistent with differential movement is documented in \u00a7 4.0. Segment analysis of the traced sewer line (\u00a7 3.6) computes two segments below IPC Table 704.1 minimum slope under the measured settlement, with the worst segment computing to negative slope. These are measured and computed findings; determination of cause is reserved to a licensed Professional Engineer.';
+  demoProject.scope.contributingFactors =
+    'Conditions documented at the site that are recognized in published literature as associated with differential foundation movement, listed without assignment of causal weight: (1) Houston Black clay \u2014 very high shrink-swell potential per published USDA NRCS survey data (\u00a7 2.3.1); (2) mature pecan tree approximately 12 ft from the northeast corner, within the commonly cited zone of influence; (3) roof drainage discharging adjacent to the foundation at the northeast corner; (4) computed sub-slab sewer slope deficiency in the same quadrant as the measured low region, pending field verification. Apportionment among these factors requires engineering analysis not performed by this firm.';
+  demoProject.scope.testingRecommendations =
+    'Field verification that would resolve the open questions in this report, to be performed by appropriately licensed parties: hydrostatic pressure test and CCTV inspection of the sub-slab sewer line by a licensed plumber; comparative re-survey at a defined interval to establish whether movement is active and at what rate (\u00a7 7.0); soil moisture sampling at the perimeter if a licensed engineer determines it material to causation analysis.';
+  demoProject.scope.structuralRecommendations =
+    'No remedial scope is offered. Specification of corrective work is an engineering judgment reserved to a licensed Professional Engineer under Texas Occupations Code Chapter 1001, and this firm performs no repair work. The measured elevation data, plan-view settlement field, and plumbing segment computations in this report, together with the raw-data export, are prepared to support that engineering review.';
+  demoProject.scope.drainageRecommendations =
+    'Site drainage conditions as observed are documented in \u00a7 2.3 and \u00a7 4.0 for the record. This firm does not specify corrective drainage work.';
+  demoProject.scope.limitations =
+    'This report reflects conditions observed and measured at the subject property on the date of inspection and does not predict future performance. The survey is non-destructive; no excavation, coring, or subsurface investigation was performed and no concealed conditions were inspected. Sub-slab sewer routing was traced from accessible cleanouts and fixture locations and is approximate; actual routing may differ. Plumbing segment analysis is a geometric computation based on measured surface settlement and assumed original slope, and is not a substitute for field testing by a licensed plumber. Published soil survey data is cited for regional context and is not a parcel-specific geotechnical determination. No opinion is expressed as to causation, structural adequacy, code compliance, or the appropriate scope of corrective work; those determinations are reserved to a licensed Professional Engineer.';
+}
 
-### Visit Bar (New in v3)
-Directly below the project back-bar. Shows every visit for this project as a tab:
+// ---------- 3) inject into v3 copy ----------
+let v3 = fs.readFileSync(V3_APP, 'utf8');
+const { start: v3ProjStart, endIdx: v3ProjEnd } =
+  (() => { const r = extractObjectLiteral(v3, 'let project = {'); return { start: r.start, endIdx: r.endIdx }; })();
 
-- **[Initial] Initial Evaluation — 2026-01-19** ← the baseline visit
-- **[Monitoring] Monitoring Visit — 2026-07-19** ← 6-month follow-up
-- **[Post-Repair] Post-Repair Verification — 2026-11-02** ← after remediation
+const newLiteral = 'let project = ' + JSON.stringify(demoProject, null, 1);
+v3 = v3.slice(0, v3ProjStart) + newLiteral + v3.slice(v3ProjEnd);
 
-Buttons:
-- **+ Monitoring Visit** — adds a follow-up visit. The plan image, sewer routing, and measurement point positions are copied from the latest visit; elevation readings are reset so you re-measure at the same grid.
-- **+ Post-Repair Survey** — same, flagged as post-repair type.
-- **Edit Visit** — change label, date, or type of the current visit.
-- **×** on any tab — deletes that visit (a project must keep at least one).
+// ---------- 4) demo-scoped storage keys ----------
+v3 = v3.replace("const STORAGE_KEY = 'foundation_forensics_v3_data';",
+                "const STORAGE_KEY = 'foundation_forensics_v3_DEMO_data';");
+v3 = v3.replace("const LEGACY_V2_STORAGE_KEY = 'foundation_inspection_v2_data';",
+                "const LEGACY_V2_STORAGE_KEY = '__ff_demo_no_legacy__';");
 
-Switching tabs saves the current visit and loads the selected one. All nine sections (§ 0.0 – § 6.0) then show that visit's data.
+// title tag distinction
+v3 = v3.replace(/<title>[^<]*<\/title>/,
+                '<title>Foundation Forensics v3 — DEMO (Preloaded Simulation)</title>');
 
-### Project Edit View
-Ten tabs covering the full evaluation:
-- § 0.0 Firm & Inspector Information
-- § 1.0 Project Information
-- § 2.0 Structural Description
-- § 3.0 Elevation Survey
-- § 3.5 Plan View (drag-and-drop floor plan)
-- § 3.6 **Plumbing Impact Assessment** (IPC Table 704.1 + joint risk + testing protocol + **evidence attachments**)
-- § 4.0 Visual Observations
-- § 5.0 Analysis (auto-calculated)
-- § 6.0 Conclusions & Recommendations
-- § 7.0 **Visit Comparison** (new in v3)
+// ---------- 5) synthesize monitoring visit in preload path ----------
+const anchorLine = '    appState.projects = [migrated];';
+if (!v3.includes(anchorLine)) throw new Error('preload anchor not found');
 
----
+const synth = `    appState.projects = [migrated];
 
-## Multi-Visit Workflow (the v3 core loop)
+    // ---- DEMO ONLY: synthesize a 6-month monitoring visit + field-test evidence ----
+    try {
+      const v1 = migrated.visits[0];
+      v1.visitLabel = 'Initial Evaluation';
+      v1.visitType = 'initial';
+      const baseDateStr = (v1.visitDate && !isNaN(new Date(v1.visitDate))) ? v1.visitDate
+                        : (project.report && project.report.inspectionDate) || '2026-01-05';
+      v1.visitDate = baseDateStr;
 
-### Visit 1 — Initial Evaluation
-1. Create project, enter property/client/foundation data
-2. Upload floor plan, place measurement points, enter elevation readings
-3. Draw sewer routing in § 3.6, review computed joint risk
-4. Recommend testing (CCTV / hydrostatic) per § 3.6.6
-5. Export PDF → deliver to client / public adjuster
+      // sample field-test evidence on the initial visit (worst segment)
+      v1.plumbing = v1.plumbing || {};
+      v1.plumbing.segmentEvidence = v1.plumbing.segmentEvidence || {};
+      v1.plumbing.segmentEvidence['0'] = [
+        { type: 'Hydrostatic', filename: '(text note)',
+          note: 'Licensed plumber hydrostatic test: 1.4 gal loss over 20 min, isolated to this run. Report retained in client file.',
+          timestamp: new Date(baseDateStr + 'T14:30:00').toISOString() },
+        { type: 'CCTV', filename: '(text note)',
+          note: 'CCTV push camera: standing water + joint offset observed at ~18 ft from cleanout. Video retained externally; stills in client file.',
+          timestamp: new Date(baseDateStr + 'T15:10:00').toISOString() }
+      ];
 
-### After testing is performed
-6. Reopen the project, § 3.6 segment table → **+ Attach** on the relevant segment
-7. Attach CCTV stills, hydrostatic test PDF, or field notes
-8. Re-export PDF — computed risk is now paired with documented evidence
+      // 6-month monitoring visit: same point grid, worsened readings
+      const d0 = new Date(baseDateStr);
+      const d1 = new Date(d0.getTime()); d1.setMonth(d1.getMonth() + 6);
+      const iso = d1.toISOString().slice(0, 10);
 
-### Visit 2 — Monitoring (typically +6 months)
-9. **+ Monitoring Visit** → point grid is pre-seeded, re-measure elevations at the same labels
-10. § 7.0 → select baseline = Visit 1, current = Visit 2
-11. Review movement rate (in/month) per point + interpretation banner
-12. Export PDF for claim file — movement rate documentation strengthens causation
+      const v2visit = JSON.parse(JSON.stringify(v1));
+      v2visit.visitId = 'visit_demo_monitoring';
+      v2visit.visitType = 'monitoring';
+      v2visit.visitLabel = 'Monitoring Visit (6-Month)';
+      v2visit.visitDate = iso;
+      if (v2visit.report) { v2visit.report.inspectionDate = iso; }
+      // differential settlement progresses ~35% + slight low-corner acceleration
+      (v2visit.points || []).forEach((p, idx) => {
+        const r = parseFloat(p.reading);
+        if (!isNaN(r)) {
+          let nr = r * 1.35;
+          if (r < 0) nr -= 0.15 + (idx % 3) * 0.05;  // low points sink further
+          p.reading = String(Math.round(nr * 100) / 100);
+        }
+        p.photo = null; // keep demo light
+      });
+      // monitoring visit evidence: follow-up note
+      v2visit.plumbing = v2visit.plumbing || {};
+      v2visit.plumbing.segmentEvidence = {
+        '0': [{ type: 'Note', filename: '(text note)',
+          note: 'Follow-up: no remediation performed between visits. Movement rate computed in §7.0 supports active contributing factor.',
+          timestamp: new Date(iso + 'T10:00:00').toISOString() }]
+      };
+      migrated.visits.push(v2visit);
+      migrated.activeVisitId = v1.visitId;   // open on the baseline visit
+    } catch (e) { console.warn('demo monitoring-visit synthesis failed:', e); }
+    // ---- END DEMO ONLY ----`;
 
-### Visit 3 — Post-Repair Verification (if repair occurred)
-13. **+ Post-Repair Survey** → re-measure
-14. § 7.0 → compare against pre-repair visit
-15. Near-zero movement rate documents stabilization; continued movement documents that remediation did not achieve it
+v3 = v3.replace(anchorLine, synth);
 
----
-
-## § 3.6 Evidence Attachments
-
-Each segment row has a **FIELD-TEST EVIDENCE** column:
-
-- **+ Attach** → choose type: `CCTV`, `Hydrostatic`, `Smoke`, `Photo`, `Note`
-- File types: images, PDFs (CCTV also accepts video, but see size note)
-- Each attachment stores filename, optional note, and timestamp
-- **Size note:** files over 5 MB may exceed browser storage. For raw CCTV video, keep the video in external storage and attach a summary PDF or key still frames instead.
-
-Evidence is per-visit — a hydrostatic test performed after Visit 1 belongs to Visit 1's record.
-
----
-
-## § 7.0 Visit Comparison
-
-Requires at least two visits. Select a baseline (earlier) and current (later) visit:
-
-- **Interval** — days and months between visits
-- **Per-point Δ elevation** — matched by point *label* across visits (keep labels consistent!)
-- **Rate (in/month)** — per point and peak/mean across all matched points
-- **Peak joint risk delta** — plumbing joint-separation probability change
-- **Interpretation banner** — qualitative read: minimal / low-moderate / elevated / rapid movement
-
-Points with labels that exist only in the current visit are shown but excluded from rate calculation.
-
----
-
-## Raw Data Export (P.E. Review)
-
-§ 6.7 → **Export Raw Data (P.E. Review)** produces a text bundle containing:
-
-- Header: property, client, firm, inspector, timestamp, and an explicit statement that no engineering opinion is asserted
-- `ELEVATION_GRID.csv` — every point from every visit (visit ID, date, type, label, position, elevation, notes)
-- `PLUMBING_SEGMENTS.csv` — every segment from every visit (run, original/current slope, joint probability, classification, evidence count)
-
-Hand this file to a licensed Texas P.E. for their independent review and sealed causation opinion. Your firm stays within technical-documentation scope.
-
----
-
-## Data Storage & Portability
-
-- **All data stays on your device** (browser localStorage). Nothing is sent to any server.
-- **Browser-specific:** data saved in Chrome won't appear in Safari.
-- **Clearing browser cache deletes projects** — use **Export All Projects** weekly as backup.
-- **Cross-device:** Save JSON on device A → email to yourself → Import JSON on device B.
-- **v2 files welcome:** legacy v2 JSON exports import directly and are auto-migrated to a single Initial Evaluation visit.
-
----
-
-## Legal Frame (first page of every report)
-
-The "Nature of This Report" disclaimer declares:
-
-1. **Non-repair** — the firm performs no repair and holds no stake in repair decisions
-2. **Not an engineering opinion** — sealed causation opinions require a licensed Texas P.E. (Occupations Code Ch. 1001 / TBPE)
-3. **Not claim negotiation** — only licensed public adjusters or attorneys negotiate claims (Texas Insurance Code)
-
-Findings are professional inspection opinions exempted under Texas DTPA § 17.49(c).
-
----
-
-## Troubleshooting
-
-**"PDF Export doesn't work"** — needs internet on first use (CDN library); cached afterward.
-
-**"My comparison shows no matched points"** — point labels must be identical across visits. Use the **+ Monitoring Visit** button (which copies labels) rather than manually re-creating points.
-
-**"I attached a big CCTV video and now saving fails"** — browser storage is limited (~5–10 MB total). Remove the video attachment, keep stills/PDF summaries instead, and store raw video externally.
-
-**"Everything says COMPLIANT but joint risk is HIGH"** — correct behavior: slope can be within IPC code while joint stress from differential movement is significant. Hydrostatic test confirms actual leaks.
-
----
-
-*Foundation Forensics v3.0 · 2026 · ASCE Level B Compliant*
+fs.writeFileSync(OUT, v3);
+console.log('wrote', OUT, (v3.length / 1024).toFixed(0) + ' KB');
