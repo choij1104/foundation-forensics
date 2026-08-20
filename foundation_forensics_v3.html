@@ -2,7 +2,7 @@
 <!--
   ============================================================================
   Foundation Forensics — ASCE Level B Residential Foundation Evaluation Platform
-  Version 3.3.0
+  Version 3.4.0
 
   Copyright (c) 2026 Jae H. Choi. All rights reserved.
 
@@ -1205,6 +1205,39 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     margin-top: 4px;
   }
 
+  /* ============ § 7.0 STAT TILES ============
+     These carried no styling at all through v3.0-v3.3: the visit-comparison
+     metrics rendered as unstyled text while every other section had cards. */
+  .stat-box {
+    padding: 12px 14px;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-top: 2px solid var(--ink);
+  }
+  .stat-label {
+    font-family: var(--sans);
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    line-height: 1.35;
+    margin-bottom: 5px;
+  }
+  .stat-val {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .stat-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
   /* ============ FINDINGS BOX ============ */
   .finding-box {
     border-left: 3px solid var(--ink);
@@ -2268,6 +2301,30 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
         <div class="plan-status" id="planStatus">Ready. Upload a floor plan to begin.</div>
       </div>
+
+      <div class="subsection">
+        <h3><span class="num">3.5.2</span>Plan Scale Calibration</h3>
+        <p>Every distance this report derives from the floor plan — the § 3.6 segment runs, the § 5.2 deflection span, and the slopes computed from them — is a pixel measurement converted to feet. Uncalibrated, that conversion is an assumption, and a report that states a run in feet is asserting a measurement. Calibrate against one distance you know on site.</p>
+
+        <div class="plan-toolbar" style="flex-wrap: wrap; gap: 10px;">
+          <label>Scale:
+            <input type="number" id="planScalePxPerFt" step="0.01" min="0.01" style="width: 90px;"
+                   onchange="setPlanScaleManual(this.value)"> px / ft
+          </label>
+          <label>Known distance from
+            <select id="calFromPoint" style="min-width: 120px;"></select>
+          </label>
+          <label>to
+            <select id="calToPoint" style="min-width: 120px;"></select>
+          </label>
+          <label>=
+            <input type="number" id="calKnownFeet" step="0.1" min="0.1" style="width: 80px;"> ft
+          </label>
+          <button onclick="calibratePlanScale()">Calibrate</button>
+          <button onclick="resetPlanScale()">Reset to default</button>
+        </div>
+        <div class="plan-status" id="planScaleStatus"></div>
+      </div>
     </div>
   </div>
 
@@ -2455,7 +2512,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   <div class="section" id="sec-analysis">
     <div class="doc">
       <div class="doc-header">
-        <h2>Engineering Analysis</h2>
+        <h2>Analysis</h2>
         <div class="section-code">§ 5.0</div>
       </div>
 
@@ -2467,11 +2524,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="subsection">
         <h3><span class="num">5.2</span>Deflection &amp; Tilt Calculations</h3>
         <div class="reference-block">
-          <div class="label">ASCE Level B Definitions</div>
+          <div class="label">Definitions used in this section</div>
           <p style="font-family: var(--serif); font-size: 13px;">
-            <strong>Deflection</strong> — Maximum deviation from a straight line between two points divided by the distance between the two points (D/L).
-            <strong>Tilt</strong> — Planar rotation: total elevation range (rise) divided by shortest distance between highest and lowest points (run), expressed as percentage.
-            Tilts exceeding 1% from original grade in combination with observable damage are generally considered a problem (ASCE Guidelines §5).
+            <strong>Deflection (&Delta;/L)</strong> — bending. The departure of the measured elevation field from a least-squares plane fitted through every plan-located point, divided by the span across which that departure develops. Fitting a plane first removes rigid-body rotation, so a slab that is flat but out of level is not counted as bent. The L/360 and L/240 limits cited in residential practice refer to this quantity.
+            <strong>Tilt</strong> — rigid-body rotation. The gradient of that same fitted plane, expressed as a percentage. A slab can carry substantial tilt with no bending at all, and the two are reported separately for that reason.
+            <strong>Elevation range</strong> — the arithmetic spread of the readings. It contains both effects and is not, by itself, either one.
+          </p>
+          <p style="font-family: var(--serif); font-size: 12.5px; color: var(--muted); margin-top: 8px;">
+            A 1% tilt threshold, taken together with observable damage, is commonly cited. Verify the figure and its context against the current ASCE Texas Section <em>Guidelines for the Evaluation and Repair of Residential Foundations</em> before relying on it in a report; this tool computes the value and does not interpret it.
           </p>
         </div>
         <div id="deflectionAnalysis"></div>
@@ -2613,7 +2673,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     <div class="footer-inner">
       <div><strong>Foundation Forensics</strong> · ASCE Level B Evaluation Standard</div>
       <div>Offline single-file application · All data remains on this device</div>
-      <div>v3.3.0 · &copy; 2026 Jae H. Choi. All rights reserved. Proprietary software — licensed, not sold.</div>
+      <div>v3.4.0 · &copy; 2026 Jae H. Choi. All rights reserved. Proprietary software — licensed, not sold.</div>
     </div>
   </footer>
 </main>
@@ -2621,6 +2681,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 <!-- END PROJECT EDIT VIEW -->
 
 <script>
+// Default plan scale, in pixels per foot. Declared first because the project
+// data literals below are evaluated at module init and read it.
+const DEFAULT_PIXELS_PER_FOOT = 20;
+
 // ==============================================================
 // STATE
 // ==============================================================
@@ -2653,7 +2717,8 @@ let project = {
   },
   survey: {
     instrument:'', serial:'', calibrationDate:'', accuracy:'±0.05 in.',
-    unit:'inch', refMode:'highest', manualRef:0
+    unit:'inch', refMode:'highest', manualRef:0,
+    planScalePxPerFt:DEFAULT_PIXELS_PER_FOOT, planScaleCalibrated:false
   },
   scope: {
     statement:'',
@@ -2748,7 +2813,8 @@ function createEmptyVisit(visitType, label) {
     },
     survey: {
       instrument:'', serial:'', calibrationDate:'', accuracy:'±0.05 in.',
-      unit:'inch', refMode:'highest', manualRef:0
+      unit:'inch', refMode:'highest', manualRef:0,
+    planScalePxPerFt:DEFAULT_PIXELS_PER_FOOT, planScaleCalibrated:false
     },
     scope: {
       statement:'',
@@ -3249,12 +3315,12 @@ function renderDashboard() {
     const readings = (p.points || []).map(pt => parseFloat(pt.reading)).filter(r => !isNaN(r));
     let sev = 'ok', sevLabel = 'NO DATA', statusClass = 's-draft', statusLabel = 'Draft';
     if (readings.length >= 2) {
-      const ref = p.survey.refMode === 'lowest' ? Math.min(...readings) : Math.max(...readings);
+      const ref = referenceElevationFor(readings, p.survey);
       const range = Math.max(...readings.map(r => r - ref)) - Math.min(...readings.map(r => r - ref));
       const rangeIn = p.survey.unit === 'inch' ? Math.abs(range) : Math.abs(range) / 25.4;
       if (rangeIn < 0.5) { sev = 'ok'; sevLabel = `Δ ${rangeIn.toFixed(2)}" — OK`; }
       else if (rangeIn < 1.0) { sev = 'warn'; sevLabel = `Δ ${rangeIn.toFixed(2)}" — Monitor`; }
-      else if (rangeIn < 1.5) { sev = 'danger'; sevLabel = `Δ ${rangeIn.toFixed(2)}" — Repair Rec.`; }
+      else if (rangeIn < 1.5) { sev = 'danger'; sevLabel = `Δ ${rangeIn.toFixed(2)}" — Exceeds tol.`; }
       else { sev = 'critical'; sevLabel = `Δ ${rangeIn.toFixed(2)}" — CRITICAL`; }
       statusClass = 's-active';
       statusLabel = 'In Progress';
@@ -3513,7 +3579,13 @@ function switchSection(name, btn) {
   btn.classList.add('active');
   document.getElementById('sec-' + name).classList.add('active');
   if (name === 'analysis') renderAnalysis();
-  if (name === 'planview') setTimeout(drawPlan, 50);
+  if (name === 'planview') setTimeout(() => {
+    drawPlan();
+    refreshCalibrationPointLists();
+    const inp = document.getElementById('planScalePxPerFt');
+    if (inp) inp.value = getPixelsPerFoot().toFixed(2);
+    renderPlanScaleStatus();
+  }, 50);
   if (name === 'plumbing') setTimeout(() => { drawSewerCanvas(); updatePlumbingUI(); }, 50);
 }
 
@@ -3794,15 +3866,26 @@ function escapeHtml(s) {
 // ==============================================================
 // CALCULATIONS
 // ==============================================================
-function getReferenceValue() {
-  const readings = project.points.map(p => parseFloat(p.reading)).filter(v => !isNaN(v));
-  if (readings.length === 0) return parseFloat(project.survey.manualRef) || 0;
-  switch (project.survey.refMode) {
-    case 'highest': return Math.max(...readings);
-    case 'lowest':  return Math.min(...readings);
-    case 'manual':  return parseFloat(project.survey.manualRef) || 0;
-    default:        return Math.max(...readings);
+// Reference elevation for a set of readings under a given survey mode.
+// This is the SINGLE definition. Every consumer — the §3.2 table, the plan-view
+// contours, the §3.6 plumbing interpolation, the dashboard card, the PDF cover and
+// the owner summary — must call it, or the same survey reports different reference
+// elevations in different places.
+function referenceElevationFor(readings, survey) {
+  const vals = (readings || []).map(r => parseFloat(r)).filter(v => !isNaN(v));
+  const mode = (survey && survey.refMode) || 'highest';
+  if (mode === 'manual') {
+    const m = parseFloat(survey && survey.manualRef);
+    return isNaN(m) ? (vals.length ? Math.max(...vals) : 0) : m;
   }
+  if (!vals.length) return 0;
+  if (mode === 'lowest') return Math.min(...vals);
+  if (mode === 'first')  return vals[0];   // legacy v2 imports only
+  return Math.max(...vals);                // 'highest' and anything unrecognized
+}
+
+function getReferenceValue() {
+  return referenceElevationFor(project.points.map(p => p.reading), project.survey);
 }
 
 function calculateDelta(reading) {
@@ -3826,84 +3909,139 @@ function deltaSeverity(delta) {
   return 'critical';
 }
 
-function deflectionRatio() {
-  // Estimate span and compute L/x
-  // Use maximum observed delta and assume typical span (user-provided via plan points)
-  const readings = project.points.map(p => parseFloat(p.reading)).filter(v => !isNaN(v));
-  if (readings.length < 2) return null;
-  const range = Math.max(...readings) - Math.min(...readings);
-  const rangeIn = toInches(range, project.survey.unit);
-
-  // Try to get span from plan points; otherwise estimate
-  let spanFeet;
-  if (project.planPoints.length >= 2) {
-    const xs = project.planPoints.map(p => p.x);
-    const ys = project.planPoints.map(p => p.y);
-    const dx = Math.max(...xs) - Math.min(...xs);
-    const dy = Math.max(...ys) - Math.min(...ys);
-    // planPoints are in pixels relative to canvas. Assume 1 pixel ≈ 0.05 ft (rough estimate only — user should override)
-    spanFeet = Math.sqrt(dx*dx + dy*dy) * 0.05;
-  } else {
-    // Approximate from square footage
-    const sqft = parseFloat((project.property.livingArea || '0').replace(/[^\d.]/g, ''));
-    spanFeet = sqft > 0 ? Math.sqrt(sqft) * 1.2 : 30;  // rough aspect ratio
+// --------------------------------------------------------------------------
+// Elevation-field geometry.
+//
+// Two DIFFERENT quantities are routinely confused, and the distinction matters:
+//
+//   TILT       — rigid-body rotation of the slab. A perfectly flat slab set on a
+//                slope has large tilt and zero bending.
+//   DEFLECTION — departure of the slab from a plane, i.e. bending. This is the
+//                quantity the L/360, L/240, L/180 limits refer to.
+//
+// Taking (max reading - min reading) over a span measures TILT, not deflection:
+// it counts rigid-body rotation as if it were bending. Deflection is measured
+// against a least-squares plane fitted to the whole point field, which removes
+// the rigid-body component and leaves only the departure from planarity.
+// --------------------------------------------------------------------------
+function fitElevationPlane() {
+  const ppf = getPixelsPerFoot();
+  const P = [];
+  for (const pp of (project.planPoints || [])) {
+    const mp = (project.points || []).find(m => m.id === pp.pointId);
+    if (!mp) continue;
+    const z = toInches(parseFloat(mp.reading), project.survey.unit);
+    if (isNaN(z)) continue;
+    P.push({ x: pp.x / ppf, y: pp.y / ppf, z, code: mp.code || mp.location || '' });
   }
+  if (P.length < 3) return null;   // a plane needs three non-collinear points
 
-  const spanInches = spanFeet * 12;
-  if (rangeIn === 0 || spanInches === 0) return null;
-  const ratio = spanInches / rangeIn;
+  const n = P.length;
+  let Sx=0,Sy=0,Sz=0,Sxx=0,Syy=0,Sxy=0,Sxz=0,Syz=0;
+  for (const q of P) { Sx+=q.x; Sy+=q.y; Sz+=q.z; Sxx+=q.x*q.x; Syy+=q.y*q.y; Sxy+=q.x*q.y; Sxz+=q.x*q.z; Syz+=q.y*q.z; }
 
-  // Classify against standard deflection limits
-  let classification;
-  if (ratio >= 360) classification = 'L/360 or better — meets cosmetic finish limit';
-  else if (ratio >= 240) classification = 'Between L/360 and L/240 — acceptable for most residential';
-  else if (ratio >= 180) classification = 'Between L/240 and L/180 — monitor';
-  else if (ratio >= 120) classification = 'Between L/180 and L/120 — significant deflection';
-  else if (ratio >= 80) classification = 'Between L/120 and L/80 — substantial deflection';
-  else classification = 'Worse than L/80 — severe deflection';
+  // Solve the 3x3 normal equations for z = a*x + b*y + c by Gaussian elimination
+  const M = [[Sxx,Sxy,Sx,Sxz],[Sxy,Syy,Sy,Syz],[Sx,Sy,n,Sz]];
+  for (let c = 0; c < 3; c++) {
+    let piv = c;
+    for (let r = c+1; r < 3; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+    if (Math.abs(M[piv][c]) < 1e-12) return null;   // degenerate: points collinear
+    const t = M[c]; M[c] = M[piv]; M[piv] = t;
+    for (let r = 0; r < 3; r++) {
+      if (r === c) continue;
+      const f = M[r][c] / M[c][c];
+      for (let k = c; k < 4; k++) M[r][k] -= f * M[c][k];
+    }
+  }
+  const a = M[0][3]/M[0][0], b = M[1][3]/M[1][1], cc = M[2][3]/M[2][2];
 
+  let hiR = -Infinity, loR = Infinity, hiP = null, loP = null;
+  for (const q of P) {
+    const r = q.z - (a*q.x + b*q.y + cc);
+    if (r > hiR) { hiR = r; hiP = q; }
+    if (r < loR) { loR = r; loP = q; }
+  }
   return {
-    range: rangeIn,
-    spanFeet: spanFeet,
-    spanInches: spanInches,
-    ratio: ratio,
-    ratioLabel: `L/${Math.round(ratio)}`,
-    classification: classification
+    a, b, c: cc, points: P,
+    slopeInPerFt: Math.hypot(a, b),          // magnitude of the plane gradient
+    peakResidual: hiR, troughResidual: loR,
+    peakPoint: hiP, troughPoint: loP
   };
 }
 
+// DEFLECTION: departure from the best-fit plane, over the distance across which
+// that departure develops. Returns null when fewer than three plan-located points
+// exist, because a plane cannot be fitted and deflection is undefined.
+function deflectionRatio() {
+  const pl = fitElevationPlane();
+  if (!pl) return null;
+  const deflection = pl.peakResidual - pl.troughResidual;      // inches
+  // Two spans, because the Delta/L convention is not uniform and the choice of L
+  // moves the answer a long way. Reporting both lets a reviewing engineer apply
+  // whichever convention their practice uses without re-deriving anything.
+  //   local   — distance between the peak and trough of the deviation: the span
+  //             across which the bending actually develops. The more conservative.
+  //   overall — the full plan extent of the measured point field.
+  const spanFeet = Math.hypot(pl.peakPoint.x - pl.troughPoint.x,
+                              pl.peakPoint.y - pl.troughPoint.y);
+  const xs = pl.points.map(q => q.x), ys = pl.points.map(q => q.y);
+  const spanOverallFeet = Math.hypot(Math.max(...xs) - Math.min(...xs),
+                                     Math.max(...ys) - Math.min(...ys));
+  const spanInches = spanFeet * 12;
+  if (!(deflection > 0) || !(spanInches > 0)) return null;
+  const ratio = spanInches / deflection;
+  const ratioOverall = (spanOverallFeet * 12) / deflection;
+
+  let classification;
+  if (ratio >= 360)      classification = 'L/360 or better — within the limit commonly cited for cosmetic finishes';
+  else if (ratio >= 240) classification = 'Between L/360 and L/240 — within limits commonly cited for residential construction';
+  else if (ratio >= 180) classification = 'Between L/240 and L/180 — exceeds the cosmetic-finish limit';
+  else if (ratio >= 120) classification = 'Between L/180 and L/120 — substantially exceeds commonly cited limits';
+  else if (ratio >= 80)  classification = 'Between L/120 and L/80 — well beyond commonly cited limits';
+  else                   classification = 'Worse than L/80 — extreme departure from planarity';
+
+  return {
+    deflection, range: deflection,           // `range` kept for existing call sites
+    spanFeet, spanInches, ratio,
+    spanOverallFeet, ratioOverall,
+    ratioLabel: 'L/' + Math.round(ratio),
+    ratioOverallLabel: 'L/' + Math.round(ratioOverall),
+    peakCode: pl.peakPoint.code, troughCode: pl.troughPoint.code,
+    calibrated: isPlanScaleCalibrated(),
+    classification
+  };
+}
+
+// TILT: the gradient of the best-fit plane — rigid-body rotation, reported as a
+// percentage. Independent of where the extreme readings happen to sit, unlike a
+// two-point rise/run, which is sensitive to a single outlying reading.
 function tiltPercent() {
+  const pl = fitElevationPlane();
+  if (pl) {
+    const tilt = (pl.slopeInPerFt / 12) * 100;
+    return {
+      rise: pl.slopeInPerFt,                 // inches of fall per foot of run
+      runFeet: 1,
+      tilt,
+      method: 'best-fit plane',
+      calibrated: isPlanScaleCalibrated(),
+      exceedsThreshold: tilt > 1.0
+    };
+  }
+  // Fallback for a survey with no plan positions: rise between the extreme
+  // readings over a run estimated from living area. Explicitly an estimate.
   const readings = project.points.map(p => parseFloat(p.reading)).filter(v => !isNaN(v));
   if (readings.length < 2) return null;
-  const range = Math.max(...readings) - Math.min(...readings);
-  const rangeIn = toInches(range, project.survey.unit);
-
-  let runFeet;
-  if (project.planPoints.length >= 2) {
-    // Find the planPoints that map to highest and lowest reading points
-    const withReading = project.planPoints.map(pp => {
-      const mp = project.points.find(m => m.id === pp.pointId);
-      return { ...pp, reading: mp ? parseFloat(mp.reading) : NaN };
-    }).filter(pp => !isNaN(pp.reading));
-    if (withReading.length >= 2) {
-      const sorted = withReading.slice().sort((a,b) => a.reading - b.reading);
-      const lo = sorted[0], hi = sorted[sorted.length - 1];
-      const dx = hi.x - lo.x, dy = hi.y - lo.y;
-      runFeet = Math.sqrt(dx*dx + dy*dy) * 0.05;
-    } else runFeet = 20;
-  } else {
-    const sqft = parseFloat((project.property.livingArea || '0').replace(/[^\d.]/g, ''));
-    runFeet = sqft > 0 ? Math.sqrt(sqft) * 0.8 : 20;
-  }
-
+  const rangeIn = toInches(Math.max(...readings) - Math.min(...readings), project.survey.unit);
+  const sqft = parseFloat((project.property.livingArea || '0').replace(/[^\d.]/g, ''));
+  const runFeet = sqft > 0 ? Math.sqrt(sqft) * 0.8 : 20;
   const runInches = runFeet * 12;
   if (runInches === 0) return null;
   const tilt = (rangeIn / runInches) * 100;
-
   return {
-    rise: rangeIn,
-    runFeet: runFeet,
-    tilt: tilt,
+    rise: rangeIn, runFeet, tilt,
+    method: 'extreme readings over a run estimated from living area',
+    calibrated: false,
     exceedsThreshold: tilt > 1.0
   };
 }
@@ -3949,7 +4087,7 @@ function renderAnalysis() {
   metricGrid.innerHTML = `
     <div class="metric"><div class="label">Points Surveyed</div><div class="value">${readings.length}</div><div class="subtext">data points</div></div>
     <div class="metric"><div class="label">Reference Elev.</div><div class="value">${ref.toFixed(2)}<span class="unit">${unit}</span></div><div class="subtext">${project.survey.refMode} mode</div></div>
-    <div class="metric"><div class="label">Max Differential</div><div class="value">${range.toFixed(2)}<span class="unit">${unit}</span></div><div class="subtext">${rangeIn.toFixed(2)} in. equiv.</div></div>
+    <div class="metric"><div class="label">Elevation Range</div><div class="value">${range.toFixed(2)}<span class="unit">${unit}</span></div><div class="subtext">${rangeIn.toFixed(2)} in. — includes tilt</div></div>
     <div class="metric"><div class="label">Highest Point</div><div class="value">+${maxDelta.toFixed(2)}<span class="unit">${unit}</span></div></div>
     <div class="metric"><div class="label">Lowest Point</div><div class="value">${minDelta.toFixed(2)}<span class="unit">${unit}</span></div></div>
     <div class="metric"><div class="label">Std. Deviation</div><div class="value">${stdev.toFixed(2)}<span class="unit">${unit}</span></div><div class="subtext">σ</div></div>
@@ -3959,32 +4097,42 @@ function renderAnalysis() {
   const defl = deflectionRatio();
   const tilt = tiltPercent();
   let defHtml = '';
+  const scaleNote = (defl || (tilt && tilt.method === 'best-fit plane')) && !isPlanScaleCalibrated()
+    ? `<p class="inline-note" style="border-left:3px solid var(--warn); padding-left:10px;">${PLAN_SCALE_CAVEAT}</p>` : '';
+
   if (defl) {
     defHtml += `
       <div class="finding-box w-${overallSev}">
-        <div class="title">§ 5.2.1 &nbsp;Deflection Ratio (D/L)</div>
-        <p>Estimated deflection of <strong>${defl.range.toFixed(2)} in.</strong> over approximate span of
-        <strong>${defl.spanFeet.toFixed(1)} ft (${defl.spanInches.toFixed(0)} in.)</strong>, yielding a deflection ratio of
+        <div class="title">§ 5.2.1 &nbsp;Deflection Ratio (&Delta;/L)</div>
+        <p>Departure from the least-squares plane fitted through all ${project.planPoints.length} plan-located points:
+        <strong>${defl.deflection.toFixed(2)} in.</strong> between <strong>${defl.peakCode}</strong> (high residual) and
+        <strong>${defl.troughCode}</strong> (low residual), separated by
+        <strong>${defl.spanFeet.toFixed(1)} ft (${defl.spanInches.toFixed(0)} in.)</strong> &mdash; a deflection ratio of
         <strong style="font-family: var(--mono);">${defl.ratioLabel}</strong>.</p>
-        <p style="font-size: 13px; color: var(--muted); margin-top: 6px;">${defl.classification}</p>
+        <p>Across the full plan extent of <strong>${defl.spanOverallFeet.toFixed(1)} ft</strong> the same deflection gives
+        <strong style="font-family: var(--mono);">${defl.ratioOverallLabel}</strong>.</p>
+        <p style="font-size: 13px; color: var(--muted); margin-top: 6px;">${defl.classification} <em>(classified on the local span, the more conservative of the two.)</em></p>
+        <p style="font-size: 12px; color: var(--muted); margin-top: 6px;">Deflection is the departure of the elevation field from a least-squares plane fitted through the plan-located points, so that a slab which is flat but out of level is not reported as bent &mdash; that is tilt, reported separately below. The L/360 and L/240 limits refer to deflection, not to the overall elevation range. Both spans are given because the &Delta;/L convention varies between practices.</p>
       </div>`;
+  } else if ((project.planPoints || []).length < 3) {
+    defHtml += `<p class="inline-note">§ 5.2.1 Deflection ratio requires at least three points placed on the Plan View (§ 3.5) &mdash; a plane cannot be fitted to fewer, and deflection is undefined without one.</p>`;
   }
   if (tilt) {
     defHtml += `
       <div class="finding-box w-${tilt.exceedsThreshold ? 'danger' : 'warn'}">
-        <div class="title">§ 5.2.2 &nbsp;Tilt Calculation</div>
-        <p>Rise of <strong>${tilt.rise.toFixed(2)} in.</strong> over run of <strong>${tilt.runFeet.toFixed(1)} ft</strong>
-        yields a tilt of <strong style="font-family: var(--mono);">${tilt.tilt.toFixed(2)}%</strong>.</p>
+        <div class="title">§ 5.2.2 &nbsp;Tilt</div>
+        <p>${tilt.method === 'best-fit plane'
+             ? `Gradient of the fitted plane: <strong>${tilt.rise.toFixed(3)} in. per foot</strong>, a tilt of <strong style="font-family: var(--mono);">${tilt.tilt.toFixed(2)}%</strong>.`
+             : `Rise of <strong>${tilt.rise.toFixed(2)} in.</strong> over a run of <strong>${tilt.runFeet.toFixed(1)} ft</strong> estimated from living area, a tilt of <strong style="font-family: var(--mono);">${tilt.tilt.toFixed(2)}%</strong>.`}</p>
         <p style="font-size: 13px; color: var(--muted); margin-top: 6px;">
           ${tilt.exceedsThreshold
-            ? 'Exceeds the 1% threshold cited in ASCE Guidelines §5 for attention when combined with observable damage.'
-            : 'Within the 1% general threshold cited in ASCE Guidelines §5.'}
+            ? 'Above 1%. Verify the threshold applied against the current ASCE Texas Section guidelines before citing it; this tool computes the value and does not interpret it.'
+            : 'Below 1%. Verify the threshold applied against the current ASCE Texas Section guidelines before citing it; this tool computes the value and does not interpret it.'}
         </p>
+        ${tilt.method !== 'best-fit plane' ? '<p style="font-size:12px;color:var(--muted);margin-top:6px;">Estimated: no plan positions are available, so the run is inferred from living area rather than measured. Place points on the Plan View (§ 3.5) for a fitted value.</p>' : ''}
       </div>`;
   }
-  if (project.planPoints.length < 2) {
-    defHtml += `<p class="inline-note">Note: Span and run distances estimated from living area. For precise values, place points on the Plan View (§ 3.5).</p>`;
-  }
+  defHtml += scaleNote;
   defAnalysis.innerHTML = defHtml;
 
   // Measured-condition classification — factual findings only.
@@ -4820,8 +4968,7 @@ async function generatePDFReport() {
     let principalText = 'Elevation survey data pending entry.';
     let principalColor = MUTED;
     if (readings.length >= 2) {
-      const refMode = project.survey.refMode || 'highest';
-      let ref = refMode === 'highest' ? Math.max(...readings) : refMode === 'lowest' ? Math.min(...readings) : readings[0];
+      const ref = referenceElevationFor(readings, project.survey);
       const deltas = readings.map(r => r - ref);
       const range = Math.max(...deltas) - Math.min(...deltas);
       const rangeIn = project.survey.unit === 'inch' ? range : range / 25.4;
@@ -4971,11 +5118,7 @@ async function generatePDFReport() {
     } else {
       // Compute reference
       const readings2 = project.points.map(p => parseFloat(p.reading)).filter(r => !isNaN(r));
-      const refMode = project.survey.refMode || 'highest';
-      let ref;
-      if (refMode === 'highest') ref = Math.max(...readings2);
-      else if (refMode === 'lowest') ref = Math.min(...readings2);
-      else ref = readings2[0];
+      const ref = referenceElevationFor(readings2, project.survey);
 
       // Table header
       y = ensureSpace(y, 8);
@@ -5043,6 +5186,9 @@ async function generatePDFReport() {
       y = bodyText(y, 'Analysis of the sub-slab sewer line based on differential foundation settlement interpolated from the measurement points. Per IPC Table 704.1 / IRC Table P3005.3, minimum slope for residential sanitary drainage piping is 1/4 in./ft (2.083% grade) for 2-1/2" or smaller pipe, and 1/8 in./ft (1.042% grade) for 3" through 6" pipe.');
       y += 2;
 
+      if (!isPlanScaleCalibrated()) {
+        y = bodyText(y, PLAN_SCALE_CAVEAT, { italic: true });
+      }
       y = subsectionHeader(y, '3.6.1', 'System Parameters');
       y = infoRow(y, 'Pipe Diameter:', `${project.plumbing.pipeDiameter}"`);
       const matLabel = getPipeMaterialProps(project.plumbing.pipeMaterial).label;
@@ -5205,27 +5351,28 @@ async function generatePDFReport() {
     if (readings.length >= 2) {
       y = newPage();
       y = sectionHeader(y, '5.0', 'Analysis');
-      const refMode = project.survey.refMode || 'highest';
-      let ref;
-      if (refMode === 'highest') ref = Math.max(...readings);
-      else if (refMode === 'lowest') ref = Math.min(...readings);
-      else ref = readings[0];
+      const ref = referenceElevationFor(readings, project.survey);
       const deltas = readings.map(r => r - ref);
       const range = Math.max(...deltas) - Math.min(...deltas);
       const rangeIn = project.survey.unit === 'inch' ? range : range / 25.4;
-      const sqft = parseFloat((project.property.livingArea || '1500').replace(/[^0-9.]/g, '')) || 1500;
-      const spanFt = Math.sqrt(sqft) * 1.2;
-      const spanIn = spanFt * 12;
-      const deflRatio = Math.round(spanIn / Math.max(rangeIn, 0.01));
-      const runFt = Math.sqrt(sqft) * 0.8;
-      const runIn = runFt * 12;
-      const tiltPct = (rangeIn / runIn) * 100;
+
+      // Same functions the screen uses. Computing these a second way here is how the
+      // printed report and the screen came to disagree in earlier releases.
+      const pdfDefl = deflectionRatio();
+      const pdfTilt = tiltPercent();
 
       y = subsectionHeader(y, '5.1', 'Summary Metrics');
       y = infoRow(y, 'Measurement Points:', readings.length);
-      y = infoRow(y, 'Maximum Differential:', `${rangeIn.toFixed(2)} in.`);
-      y = infoRow(y, 'Deflection Ratio:', `L/${deflRatio}`);
-      y = infoRow(y, 'Overall Tilt:', `${tiltPct.toFixed(2)}%`);
+      y = infoRow(y, 'Elevation Range:', `${rangeIn.toFixed(2)} in. (includes tilt)`);
+      y = infoRow(y, 'Deflection:', pdfDefl ? `${pdfDefl.deflection.toFixed(2)} in. over ${pdfDefl.spanFeet.toFixed(1)} ft (${pdfDefl.peakCode} to ${pdfDefl.troughCode})` : 'not computed — fewer than 3 plan-located points');
+      y = infoRow(y, 'Deflection Ratio:', pdfDefl ? `${pdfDefl.ratioLabel} over the local span; ${pdfDefl.ratioOverallLabel} over the full ${pdfDefl.spanOverallFeet.toFixed(1)} ft plan extent` : 'n/a');
+      y = infoRow(y, 'Overall Tilt:', pdfTilt ? `${pdfTilt.tilt.toFixed(2)}%  (${pdfTilt.method})` : 'n/a');
+      if (pdfDefl) {
+        y = bodyText(y, `Deflection is the departure of the measured elevation field from a least-squares plane fitted through all plan-located points, taken between ${pdfDefl.peakCode} and ${pdfDefl.troughCode}. Fitting a plane first removes rigid-body tilt, so that a slab which is flat but out of level is not reported as bent; tilt is reported separately above. The L/360 and L/240 limits cited in residential practice refer to deflection, not to the elevation range. Two ratios are given because the span used in the Delta/L convention varies between practices: the local span is the distance between the peak and trough of the deviation, across which the bending develops, and the overall span is the full plan extent of the measured point field. The local figure is the more conservative and is the one classified.`);
+      }
+      if ((pdfDefl && !pdfDefl.calibrated) || (pdfTilt && pdfTilt.method === 'best-fit plane' && !pdfTilt.calibrated)) {
+        y = bodyText(y, PLAN_SCALE_CAVEAT, { italic: true });
+      }
 
       y = subsectionHeader(y, '5.2', 'Classification of Measured Condition');
       let diagTitle, diagText, diagColor;
@@ -5914,7 +6061,111 @@ async function generatePDFReport() {
 // ==============================================================
 // § 3.6 SUB-SLAB PLUMBING IMPACT ASSESSMENT
 // ==============================================================
-const PIXELS_PER_FOOT_SEWER = 20;   // matches plan view scale
+// Default plan scale, used only until the survey is calibrated. The plan canvas is
+// 1200x750 px, so 20 px/ft describes a 60 x 37.5 ft envelope — a plausible house, and
+// nothing more than that. Plan images are uploaded at arbitrary resolution, so every
+// length derived from pixels is an assumption until getPixelsPerFoot() is calibrated.
+
+// The one place pixel->foot conversion is defined. Run lengths, spans, and every
+// slope computed from them scale directly with this number.
+function getPixelsPerFoot() {
+  const v = parseFloat(project.survey && project.survey.planScalePxPerFt);
+  return (!isNaN(v) && v > 0) ? v : DEFAULT_PIXELS_PER_FOOT;
+}
+
+// True only when the inspector has calibrated the plan against a known distance.
+// Until then, every derived length is flagged as an assumption in the UI and report.
+function isPlanScaleCalibrated() {
+  return !!(project.survey && project.survey.planScaleCalibrated);
+}
+
+function setPlanScaleManual(v) {
+  const n = parseFloat(v);
+  if (isNaN(n) || n <= 0) { renderPlanScaleStatus(); return; }
+  project.survey.planScalePxPerFt = n;
+  project.survey.planScaleCalibrated = true;
+  afterPlanScaleChange();
+}
+
+function calibratePlanScale() {
+  const aId = parseInt(document.getElementById('calFromPoint').value, 10);
+  const bId = parseInt(document.getElementById('calToPoint').value, 10);
+  const feet = parseFloat(document.getElementById('calKnownFeet').value);
+  const st = document.getElementById('planScaleStatus');
+  if (isNaN(aId) || isNaN(bId) || aId === bId) {
+    if (st) st.textContent = 'Select two different measurement points.';
+    return;
+  }
+  if (isNaN(feet) || feet <= 0) {
+    if (st) st.textContent = 'Enter the known distance between those two points, in feet.';
+    return;
+  }
+  const A = (project.planPoints || []).find(pp => pp.pointId === aId);
+  const B = (project.planPoints || []).find(pp => pp.pointId === bId);
+  if (!A || !B) {
+    if (st) st.textContent = 'Both points must be placed on the plan before the scale can be calibrated.';
+    return;
+  }
+  const px = Math.hypot(B.x - A.x, B.y - A.y);
+  if (px < 1) {
+    if (st) st.textContent = 'Those two points are at the same place on the plan. Pick points that are far apart — a longer baseline calibrates more accurately.';
+    return;
+  }
+  project.survey.planScalePxPerFt = px / feet;
+  project.survey.planScaleCalibrated = true;
+  afterPlanScaleChange();
+}
+
+function resetPlanScale() {
+  project.survey.planScalePxPerFt = DEFAULT_PIXELS_PER_FOOT;
+  project.survey.planScaleCalibrated = false;
+  afterPlanScaleChange();
+}
+
+function afterPlanScaleChange() {
+  const inp = document.getElementById('planScalePxPerFt');
+  if (inp) inp.value = getPixelsPerFoot().toFixed(2);
+  renderPlanScaleStatus();
+  snapshotCurrentProject();
+  saveToLocalStorage();
+  if (typeof updateAllCalculations === 'function') updateAllCalculations();
+  if (typeof updatePlumbingUI === 'function') { try { updatePlumbingUI(); } catch (e) {} }
+  if (typeof renderAnalysis === 'function') { try { renderAnalysis(); } catch (e) {} }
+}
+
+function renderPlanScaleStatus() {
+  const st = document.getElementById('planScaleStatus');
+  if (!st) return;
+  const ppf = getPixelsPerFoot();
+  const envelope = `Canvas envelope at this scale: ${(1200/ppf).toFixed(1)} x ${(750/ppf).toFixed(1)} ft.`;
+  if (isPlanScaleCalibrated()) {
+    st.innerHTML = `<strong>Calibrated:</strong> ${ppf.toFixed(2)} px/ft. ${envelope} Derived lengths are reported as measured.`;
+    st.style.color = 'var(--ok)';
+  } else {
+    st.innerHTML = `<strong>Not calibrated.</strong> Using the default ${DEFAULT_PIXELS_PER_FOOT} px/ft. ${envelope} `
+      + `Segment runs, spans, and the slopes computed from them are assumptions until this is calibrated, and the report says so.`;
+    st.style.color = 'var(--warn)';
+  }
+}
+
+function refreshCalibrationPointLists() {
+  const from = document.getElementById('calFromPoint');
+  const to = document.getElementById('calToPoint');
+  if (!from || !to) return;
+  const placed = (project.planPoints || []).map(pp => {
+    const mp = (project.points || []).find(m => m.id === pp.pointId);
+    return mp ? { id: mp.id, label: (mp.code || 'point') + (mp.location ? ' — ' + mp.location : '') } : null;
+  }).filter(Boolean);
+  const opts = placed.map(o => `<option value="${o.id}">${String(o.label).replace(/</g,'&lt;').substring(0,40)}</option>`).join('');
+  const prevFrom = from.value, prevTo = to.value;
+  from.innerHTML = '<option value="">— point —</option>' + opts;
+  to.innerHTML   = '<option value="">— point —</option>' + opts;
+  if (prevFrom) from.value = prevFrom;
+  if (prevTo) to.value = prevTo;
+}
+
+const PLAN_SCALE_CAVEAT = 'Plan scale is not calibrated. Distances derived from the floor-plan image — segment runs, spans, and the slopes computed from them — rest on an assumed scale of '
+  + DEFAULT_PIXELS_PER_FOOT + ' pixels per foot and are not measured values. Calibrate the scale in § 3.5 against a known dimension before relying on any length in this section.';
 let sewerMode = 'draw';
 let sewerDragTarget = null;
 
@@ -6262,18 +6513,7 @@ function interpolatePlumbDelta(x, y) {
 }
 
 function computeReferenceElevation() {
-  // Mirror the logic in analysis
-  const readings = project.points.map(p => parseFloat(p.reading)).filter(r => !isNaN(r));
-  if (readings.length === 0) return 0;
-  const mode = project.survey.refMode || 'highest';
-  if (mode === 'highest') return Math.max(...readings);
-  if (mode === 'lowest')  return Math.min(...readings);
-  if (mode === 'first')   return readings[0];
-  if (mode === 'manual') {
-    const m = parseFloat(project.survey.manualRef);
-    return isNaN(m) ? readings[0] : m;
-  }
-  return readings[0];
+  return getReferenceValue();
 }
 
 function computePlumbingSegments() {
@@ -6289,7 +6529,7 @@ function computePlumbingSegments() {
     const deltaStart = interpolatePlumbDelta(n1.x, n1.y);
     const deltaEnd   = interpolatePlumbDelta(n2.x, n2.y);
     const runPx = Math.sqrt((n2.x-n1.x)**2 + (n2.y-n1.y)**2);
-    const runFt = runPx / PIXELS_PER_FOOT_SEWER;
+    const runFt = runPx / getPixelsPerFoot();
     const runIn = runFt * 12;
     const origDropIn = runIn * origSlope;
     const diffInduced = deltaEnd - deltaStart;
@@ -6303,11 +6543,24 @@ function computePlumbingSegments() {
     else                                        { classification = 'Compliant';        color = '#2d5f3f'; severity = 'ok';       }
 
     const moveAbs = Math.abs(diffInduced);
-    let jointRisk, jointProb;
-    if (moveAbs < mat.jointTol * 0.3)      { jointRisk = 'LOW';       jointProb = Math.round(moveAbs/mat.jointTol * 25 * mat.leakFactor); }
-    else if (moveAbs < mat.jointTol)       { jointRisk = 'MODERATE';  jointProb = Math.round((25 + (moveAbs-mat.jointTol*0.3)/(mat.jointTol*0.7) * 35) * mat.leakFactor); }
-    else if (moveAbs < mat.jointTol * 2)   { jointRisk = 'HIGH';      jointProb = Math.round((60 + (moveAbs-mat.jointTol)/mat.jointTol * 25) * mat.leakFactor); }
-    else                                   { jointRisk = 'VERY HIGH'; jointProb = Math.min(95, Math.round(85 * mat.leakFactor + (moveAbs-mat.jointTol*2)*5)); }
+    // Joint-stress index — a comparative 0-95 screening scale, not a probability.
+    // Built as a piecewise-linear ramp on movement/jointTolerance with breakpoints at
+    // 0.3, 1 and 2 tolerances, then scaled by the material's leak factor.
+    //
+    // Each piece must MEET its neighbour at the breakpoint. The first piece
+    // previously divided by jointTol instead of 0.3*jointTol, so it reached only
+    // 7.5 at the 0.3 breakpoint where the second piece starts at 25 — the index
+    // jumped more than threefold across a movement difference of half a thousandth
+    // of an inch. The ramps below are continuous at every breakpoint and saturate
+    // at 95 before the leak factor is applied.
+    const tol = mat.jointTol;
+    const t = moveAbs / tol;                 // movement in units of joint tolerance
+    let jointRisk, base;
+    if (t < 0.3)      { jointRisk = 'LOW';       base = (t / 0.3) * 25; }
+    else if (t < 1)   { jointRisk = 'MODERATE';  base = 25 + ((t - 0.3) / 0.7) * 35; }
+    else if (t < 2)   { jointRisk = 'HIGH';      base = 60 + (t - 1) * 25; }
+    else              { jointRisk = 'VERY HIGH'; base = Math.min(95, 85 + (t - 2) * 10); }
+    let jointProb = Math.round(base * mat.leakFactor);
     jointProb = Math.max(0, Math.min(95, jointProb));
 
     segments.push({

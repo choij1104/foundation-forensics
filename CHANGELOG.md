@@ -6,6 +6,98 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [3.4.0] — 2026-08-20
+
+Verification pass over the calculation engine. Every figure below was recomputed
+independently and compared against the application's output; the entries are the
+places the two disagreed, or where the application computed a quantity other than
+the one it named.
+
+### Fixed — tilt was being reported as deflection
+- **§ 5.2.1 computed tilt, labelled it deflection, and classified it against deflection
+  limits.** The ratio was `span / (max reading − min reading)`, where the span was the
+  bounding-box diagonal of the plan points. The elevation range includes rigid-body
+  rotation, so a slab that is perfectly flat but out of level produced a finite
+  "deflection" and could be classified as distressed with no bending present at all;
+  conversely a dished slab whose extreme readings happen to sit at similar elevations
+  under-reported. The L/360 and L/240 limits refer to bending, not to range.
+- **§ 5.2.1 and § 5.2.2 were the same measurement.** Both divided the same elevation
+  range by a length — the bounding-box diagonal in one case, the distance between the
+  extreme readings in the other — and the results were presented as two independent
+  findings. On the demo they read L/293 and 0.50%: one number, two denominators.
+- Deflection is now the departure of the elevation field from a **least-squares plane**
+  fitted through every plan-located point, which removes the rigid-body component and
+  leaves only the departure from planarity. Reported with the two points carrying the
+  peak and trough residual, over both the local span (peak to trough, the more
+  conservative) and the full plan extent, because the span used in the Δ/L convention
+  varies between practices and the choice moves the answer a long way. On the demo:
+  deflection 0.59 in., L/419 local and L/1336 overall.
+- Tilt is now the gradient of that same fitted plane rather than a rise/run between two
+  extreme readings, so a single outlying point no longer sets it. Where no plan
+  positions exist the previous living-area estimate remains, explicitly labelled as an
+  estimate. Deflection returns nothing at all below three plan-located points — a plane
+  cannot be fitted to fewer, and deflection is undefined without one.
+- The 1% tilt note no longer asserts what the ASCE Texas Section guidelines say. It
+  states the computed value and directs the reader to verify the threshold against the
+  current document.
+
+### Fixed — distances in feet were never measured
+- **The pixel-to-foot scale was hardcoded.** `PIXELS_PER_FOOT_SEWER = 20` governed every
+  § 3.6 segment run, and the same figure appeared again as a bare `0.05` in two other
+  functions, so the three could silently diverge. Plan images are uploaded at arbitrary
+  resolution: 20 px/ft is an assumption, and a report stating a run of "11.7 ft" was
+  asserting a measurement nobody took.
+  In the application's own demo the assumed scale put the plan at 836 sq ft against a
+  stated living area of 1,850 — a linear error of about 1.5x.
+- **§ 3.5.2 Plan Scale Calibration** added: enter pixels per foot directly, or select two
+  measurement points and give the distance between them on site. Until calibrated, the
+  § 3.5 status line and both § 3.6 and § 5.1 in the report state plainly that derived
+  lengths rest on an assumed scale and are not measured values.
+- One `getPixelsPerFoot()` now feeds segment runs, the deflection span, and the plane
+  fit. Calibrating the demo from 20 to 13.44 px/ft moves segment runs from 11.7–13.8 ft
+  to 15.7–20.5 ft, slopes from 0.01547 to 0.01723 on the worst segment, tilt from 0.46%
+  to 0.31%, and the deflection ratio from L/281 to L/419 — across a classification
+  boundary. The scale is not a cosmetic setting.
+
+### Fixed — joint-stress index jumped at a breakpoint
+- The index is a piecewise-linear ramp on movement ÷ joint tolerance with breakpoints at
+  0.3, 1 and 2 tolerances. The first piece divided by the full tolerance instead of
+  0.3 × tolerance, so it reached 7.5 where the second piece begins at 25: for cast iron
+  the index jumped from 5.6 to 18.8 across a movement difference of half a thousandth of
+  an inch. The remaining breakpoints were already continuous. All four pieces now meet,
+  and the top piece saturates at 95 before the material leak factor is applied instead of
+  adding an unscaled term.
+
+### Fixed — five implementations of one reference elevation
+- The § 3.2 table, the plan-view contours, the § 3.6 interpolation, the dashboard card,
+  the PDF cover and the PDF § 3.2 table each resolved the survey reference mode
+  separately, and they did not agree: three of them ignored `manual` mode and fell back
+  to the first reading or the highest, and two disagreed on what an unrecognized mode
+  should do. A survey set to a manual datum reported one reference elevation on screen
+  and a different one in the report. There is now a single `referenceElevationFor()`
+  and every consumer calls it.
+- The PDF computed its own § 5.1 deflection and tilt from living area alone, ignoring the
+  plan positions the screen used — a sixth implementation, and the reason the printed
+  metrics differed from the screen. It now calls the same functions.
+
+### Verified — no change required
+- IPC Table 704.1 minimum slopes: ¼ in./ft (0.02083) for ≤ 2½ in., ⅛ in./ft (0.01042)
+  for 3–6 in., 1⁄16 in./ft (0.00521) above. Correct as implemented.
+- Inverse-distance-squared interpolation of settlement at sewer nodes: plan points and
+  sewer nodes share one coordinate space, and the weighting is correctly formed.
+- Segment slope sign convention: settlement at the downstream end increases fall, at the
+  upstream end reduces it. Correct.
+- Movement-rate and datum normalization in § 7.0 (added in 3.3.0) reproduce independently.
+
+### Changed
+- The demo build now ships with its plan scale calibrated to the stated 1,850 sq ft
+  living area, so the briefing file no longer contradicts itself.
+
+### Known limitation, documented rather than fixed
+- Each § 3.6 segment is modelled as a straight line between its endpoints. A settlement
+  bowl that dips between two nodes is not represented; place additional nodes through the
+  low point to capture it.
+
 ## [3.3.0] — 2026-08-20
 
 ### Fixed — the report did not match the software

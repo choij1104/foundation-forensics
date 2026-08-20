@@ -2,7 +2,7 @@
 
 > An independent, calculation-driven ASCE Level B evaluation platform for residential foundation forensics. Field-deployable, fully offline, and built around **multi-visit time-series monitoring**, **field-test evidence integration**, and **raw-data export for licensed P.E. review**.
 
-![Version](https://img.shields.io/badge/version-3.3.0-blue)
+![Version](https://img.shields.io/badge/version-3.4.0-blue)
 ![Standard](https://img.shields.io/badge/ASCE-Level%20B-green)
 ![License](https://img.shields.io/badge/license-proprietary-red)
 ![Runtime](https://img.shields.io/badge/runtime-offline-success)
@@ -71,6 +71,8 @@ A new export button emits elevation grid and plumbing segments as CSV, wrapped i
 
 **v3.2.0 — Forensic-neutral language, proprietary license.** Auto-generated repair-prescriptive text was replaced with findings that state what was measured and refer causation and remedial scoping to a licensed P.E. "Joint separation probability (%)" became the **joint-stress index**, explicitly a comparative screening scale rather than a statistical probability. The license moved from MIT to proprietary.
 
+**v3.4.0 — The arithmetic says what it means.** A verification pass recomputed the calculation engine independently. § 5.2 had been computing *tilt* — the elevation range over a span — and labelling it *deflection*, then classifying it against the L/360 and L/240 limits, which are bending limits: a slab that was flat but out of level read as bent, and § 5.2.1 and § 5.2.2 turned out to be the same number over two different denominators. Deflection is now the departure from a least-squares plane fitted through the plan-located points, with tilt reported separately as that plane's gradient. The pixel-to-foot scale that every segment run and span depends on was hardcoded at 20 px/ft and duplicated as a bare `0.05` in two other places; § 3.5.2 now calibrates it against a known distance, and until it is calibrated the report says plainly that its lengths are assumptions. Five separate implementations of "reference elevation" disagreed with each other; there is one now. See [`CHANGELOG.md`](CHANGELOG.md) for the full list, including what was checked and found correct.
+
 **v3.3.0 — The report matches the software.** § 7.0 Visit Comparison, the flagship v3 feature, had never actually printed in the PDF; it does now, and the report's Limitations & Certification section moved to § 8.0 so the on-screen and printed numbering agree. Cross-visit comparison now normalizes each visit against its own reference point before computing any rate, so a change of survey datum can no longer masquerade as structural movement. The PDF engine is bundled into the file, making offline field use real rather than nominal. See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 
 ---
@@ -112,7 +114,13 @@ Or just download `foundation_forensics_v3.html` and double-click. Any modern bro
 
 ## Screenshots
 
-*Screenshots in `docs/screenshots/` are from the v2 baseline and predate the forensic re-positioning — they show the older labels and the repair-oriented voice. v3 screenshots (visit bar, § 7.0 comparison, evidence attachments, settlement contours) are pending. For a current view of the software, open the [preloaded demonstration](https://choij1104.github.io/foundation-forensics/foundation_forensics_v3_demo_preloaded.html) instead.*
+Captured from the [preloaded demonstration](https://choij1104.github.io/foundation-forensics/foundation_forensics_v3_demo_preloaded.html) at v3.4.0.
+
+| | |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png)<br>**Dashboard** — projects with their measured differential and status. | ![Elevation survey](docs/screenshots/project_view.png)<br>**§ 3.0 Elevation Survey** — readings with live deltas and severity. |
+| ![Plan view](docs/screenshots/plan_contours.png)<br>**§ 3.5 Plan View** — 0.25″ settlement bands and iso-settlement contours. | ![Plumbing impact](docs/screenshots/plumbing_tab.png)<br>**§ 3.6 Sub-Slab Plumbing Impact** — per-segment slope against IPC minimums, joint-stress index, field-test evidence. |
+| ![Analysis](docs/screenshots/analysis.png)<br>**§ 5.0 Analysis** — deflection against a fitted plane, reported separately from tilt. | ![Visit comparison](docs/screenshots/visit_comparison.png)<br>**§ 7.0 Visit Comparison** — movement rate between two visits, with the survey datum removed. |
 
 ---
 
@@ -216,6 +224,8 @@ node build_demo.js     # reads legacy/foundation_v2_demo_preloaded.html + founda
 - [x] Visual exhibits A/B/C for sub-slab plumbing (v3.0.2)
 - [x] § 7.0 Visit Comparison printed in the PDF report (v3.3.0)
 - [x] Fully offline PDF generation — engine bundled, no CDN (v3.3.0)
+- [x] Deflection separated from tilt, measured against a fitted plane (v3.4.0)
+- [x] Plan-scale calibration, so distances in feet are measured rather than assumed (v3.4.0)
 - [ ] Photo annotation on plan view
 - [ ] Voice input for elevation readings
 - [ ] Multi-language support (Korean / Spanish)
@@ -256,4 +266,4 @@ Built for the independent foundation evaluation workflow in Texas expansive-soil
 
 ---
 
-*Foundation Forensics v3.3.0 · 2026 · ASCE Level B · Independent Technical Documentation*
+*Foundation Forensics v3.4.0 · 2026 · ASCE Level B · Independent Technical Documentation*

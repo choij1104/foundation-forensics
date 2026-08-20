@@ -194,6 +194,34 @@ const synth = `    appState.projects = [migrated];
       };
       migrated.visits.push(v2visit);
       migrated.activeVisitId = v1.visitId;   // open on the baseline visit
+
+      // Calibrate the demo's plan scale. Left at the 20 px/ft default the plan
+      // measures ~836 sq ft against a stated living area of 1,850 sq ft, so every
+      // segment run in the briefing file would be an uncalibrated assumption.
+      // Solve the point-field bounding box for the stated area instead.
+      try {
+        const AREA_SQFT = 1850;
+        const pp = (v1.planPoints || []);
+        if (pp.length >= 2) {
+          const xs = pp.map(q => q.x), ys = pp.map(q => q.y);
+          const ppf = Math.sqrt(((Math.max(...xs) - Math.min(...xs)) *
+                                 (Math.max(...ys) - Math.min(...ys))) / AREA_SQFT);
+          if (isFinite(ppf) && ppf > 0) {
+            const scale = Math.round(ppf * 100) / 100;
+            for (const v of migrated.visits) {
+              v.survey = Object.assign({}, v.survey, {
+                planScalePxPerFt: scale, planScaleCalibrated: true
+              });
+            }
+            // the globals the app snapshots from on first load
+            if (typeof project !== 'undefined' && project.survey) {
+              project.survey.planScalePxPerFt = scale;
+              project.survey.planScaleCalibrated = true;
+            }
+            console.info('demo plan scale calibrated to', scale, 'px/ft');
+          }
+        }
+      } catch (e) { console.warn('demo plan-scale calibration failed:', e); }
     } catch (e) { console.warn('demo monitoring-visit synthesis failed:', e); }
     // ---- END DEMO ONLY ----`;
 
