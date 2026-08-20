@@ -8,10 +8,11 @@
 A single-file, offline-capable web application that produces ASCE Level B foundation evaluation reports for residential properties, engineered for **independent forensic evaluation firms** operating strictly as **technical documentation providers**. The application supports:
 
 - Multi-visit time-series monitoring of the same property (initial evaluation → monitoring follow-ups → post-repair verification)
-- Elevation surveying with live calculations and severity classification
+- Elevation surveying with live calculations and severity classification, with deflection measured against a least-squares plane so that rigid-body tilt is not counted as bending
 - Interactive floor-plan view with automatic settlement contour rendering
 - Sub-slab plumbing impact assessment with per-segment field-test evidence integration (CCTV, hydrostatic, smoke test)
 - Movement-rate analysis between any two visits
+- Plan-scale calibration, so that distances reported in feet are measured rather than assumed
 - Raw-data export for licensed Texas Professional Engineer review
 - PDF report generation with a three-frame legal disclaimer (non-repair · not engineering opinion · not claim negotiation)
 

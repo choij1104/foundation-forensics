@@ -1,4 +1,4 @@
-# Foundation Forensics — Usage Guide (v3.0)
+# Foundation Forensics — Usage Guide (v3.4)
 
 ## Quick Start
 
@@ -76,6 +76,29 @@ Ten tabs covering the full evaluation:
 15. Near-zero movement rate documents stabilization; continued movement documents that remediation did not achieve it
 
 ---
+
+## § 3.5.2 Plan Scale Calibration — do this before trusting any distance
+
+Every length this report derives from the floor plan is a pixel measurement converted to feet: the § 3.6 segment runs, the § 5.2 deflection span, and the slopes computed from them. Floor plans are uploaded at whatever resolution they happen to have, so that conversion is an assumption until you calibrate it — and a report stating a run of "11.7 ft" is asserting a measurement.
+
+Calibrate once per project, after placing the measurement points:
+
+1. Open **§ 3.5 Plan View → 3.5.2 Plan Scale Calibration**.
+2. Pick two measurement points that are far apart — a longer baseline calibrates more accurately than a short one.
+3. Enter the distance between them as measured on site, in feet, and press **Calibrate**.
+4. The status line turns green and states the resulting px/ft along with the canvas envelope it implies. If that envelope is nothing like the building, the calibration is wrong; check that you used the right two points.
+
+You can also type a pixels-per-foot value directly if you know the plan's scale.
+
+Until this is done, the § 3.5 status line, § 3.6, and § 5.1 of the report all state that derived lengths rest on an assumed scale and are not measured values. The scale is not cosmetic: on the bundled demonstration, calibrating from the 20 px/ft default to 13.44 px/ft moves segment runs from 11.7–13.8 ft to 15.7–20.5 ft and the deflection ratio from L/281 to L/419 — across a classification boundary.
+
+## § 5.2 Deflection and tilt are two different things
+
+- **Deflection** is bending: how far the slab departs from a plane. This is what the L/360 and L/240 limits refer to. The application fits a least-squares plane through every plan-located point and measures the departure from it, so a slab that is flat but simply out of level is not reported as bent.
+- **Tilt** is rigid-body rotation — the gradient of that same plane, as a percentage.
+- **Elevation range** (§ 5.1) is the arithmetic spread of the readings. It contains both effects and is neither one on its own.
+
+Deflection needs at least three points placed on the plan; a plane cannot be fitted to fewer, and the section says so rather than substituting an estimate.
 
 ## § 3.6 Evidence Attachments
 
