@@ -1,0 +1,27 @@
+# Foundation Forensics
+
+# Build inputs that are large and reproducible from the legacy source
+node_modules/
+package-lock.json
+package.json
+
+# QA / scratch
+qa*.mjs
+*.log
+/tmp/
+report.pdf
+report.txt
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.vscode/
+.idea/
+
+# Never commit real field data — projects contain client names,
+# property addresses, and inspection photographs.
+*_backup_*.json
+foundation_forensics_*_export.json
+*.client.json

@@ -8,7 +8,11 @@
 
 const fs = require('fs');
 
-const V2_DEMO = '/mnt/project/foundation_v2_demo_preloaded.html';
+// Source v2 demo build. Resolved relative to this script so the build is
+// reproducible from a fresh clone; override with FF_V2_DEMO if it lives elsewhere.
+const path = require('path');
+const V2_DEMO = process.env.FF_V2_DEMO
+  || path.join(__dirname, 'legacy', 'foundation_v2_demo_preloaded.html');
 const V3_APP  = 'foundation_forensics_v3.html';
 const OUT     = 'foundation_forensics_v3_demo_preloaded.html';
 
@@ -158,16 +162,29 @@ const synth = `    appState.projects = [migrated];
       v2visit.visitLabel = 'Monitoring Visit (6-Month)';
       v2visit.visitDate = iso;
       if (v2visit.report) { v2visit.report.inspectionDate = iso; }
-      // differential settlement progresses ~35% + slight low-corner acceleration
-      (v2visit.points || []).forEach((p, idx) => {
-        const r = parseFloat(p.reading);
-        if (!isNaN(r)) {
-          let nr = r * 1.35;
-          if (r < 0) nr -= 0.15 + (idx % 3) * 0.05;  // low points sink further
-          p.reading = String(Math.round(nr * 100) / 100);
-        }
-        p.photo = null; // keep demo light
-      });
+      // Differential settlement progresses ~35%, with slight low-corner acceleration.
+      // Readings are RELATIVE elevations against the survey reference point, so the
+      // growth must be applied to each point's DEVIATION from that reference, never
+      // to the absolute reading — multiplying the reading itself would inflate the
+      // whole grid by ~35 in. and make §7.0 report a nonsensical movement rate.
+      {
+        const vReadings = (v2visit.points || []).map(p => parseFloat(p.reading)).filter(r => !isNaN(r));
+        const refMode = (v2visit.survey && v2visit.survey.refMode) || 'highest';
+        const datum = !vReadings.length ? 0
+          : refMode === 'lowest' ? Math.min(...vReadings)
+          : refMode === 'highest' ? Math.max(...vReadings)
+          : vReadings[0];
+        (v2visit.points || []).forEach((p, idx) => {
+          const r = parseFloat(p.reading);
+          if (!isNaN(r)) {
+            const dev = r - datum;               // <= 0 when referenced to the high point
+            let nd = dev * 1.35;                 // differential grows ~35% over the interval
+            if (dev < 0) nd -= 0.05 + (idx % 3) * 0.02;  // low corner accelerates slightly
+            p.reading = String(Math.round((datum + nd) * 100) / 100);
+          }
+          p.photo = null; // keep demo light
+        });
+      }
       // monitoring visit evidence: follow-up note
       v2visit.plumbing = v2visit.plumbing || {};
       v2visit.plumbing.segmentEvidence = {

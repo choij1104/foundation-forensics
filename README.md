@@ -1,8 +1,8 @@
 # Foundation Forensics
 
-> An independent, calculation-driven ASCE Level B evaluation platform for residential foundation forensics. Field-deployable, offline-capable, and built around **multi-visit time-series monitoring**, **field-test evidence integration**, and **raw-data export for licensed P.E. review**.
+> An independent, calculation-driven ASCE Level B evaluation platform for residential foundation forensics. Field-deployable, fully offline, and built around **multi-visit time-series monitoring**, **field-test evidence integration**, and **raw-data export for licensed P.E. review**.
 
-![Version](https://img.shields.io/badge/version-3.2-blue)
+![Version](https://img.shields.io/badge/version-3.3.0-blue)
 ![Standard](https://img.shields.io/badge/ASCE-Level%20B-green)
 ![License](https://img.shields.io/badge/license-proprietary-red)
 ![Runtime](https://img.shields.io/badge/runtime-offline-success)
@@ -55,11 +55,23 @@ The §3.6 Sub-Slab Plumbing Impact table now has an **Evidence** column per segm
 - Smoke test photos
 - Field-observation notes
 
-Each attachment lands on the specific segment (e.g., §2, Master Bath → Dining) where the finding was observed. The output binds computed joint-risk probability to documented field evidence in one report — which is the artifact insurance adjusters actually need.
+Each attachment lands on the specific segment (e.g., §2, Master Bath → Dining) where the finding was observed. The output binds the computed joint-stress index to documented field evidence in one report — which is the artifact insurance adjusters actually need. The index is a comparative screening value used to prioritize field verification; it is not a statistical probability and does not establish that a leak exists.
 
 ### 4. Raw Data Export for P.E. Review
 
 A new export button emits elevation grid and plumbing segments as CSV, wrapped in a header identifying the property, firm, and inspector, with an explicit statement that **no engineering opinion is asserted in the file**. A licensed Texas Professional Engineer can review the data and issue a separate signed and sealed causation opinion, keeping the forensic firm cleanly within the technical-documentation scope of practice.
+
+---
+
+## Added Since v3.0
+
+**v3.0.2 — Visual exhibits.** § 3.6 now generates three exhibits on screen and in the PDF: a plan overlay of the sewer routing colour-coded by slope classification, per-segment side-view slope profiles (as-designed vs. current vs. IPC minimum, with settlement arrows and back-pitch pooling zones), and a bell-and-spigot joint diagram carrying the property's worst-segment values.
+
+**v3.1.0 — Contours and site geology.** Plan view gained discrete 0.25″ settlement bands on a divergent palette plus marching-squares iso-settlement contours with a dashed zero-movement line. § 2.3.1 Site Geology added a one-click USDA SSURGO fetch — the property address is geocoded through the U.S. Census geocoder, the parcel's dominant map unit is pulled from Soil Data Access, and map unit, component, plasticity index range, linear extensibility, and drainage are cached into the project with a dated source citation. An embedded database of ~24 Bexar-and-adjacent NRCS series covers the offline case.
+
+**v3.2.0 — Forensic-neutral language, proprietary license.** Auto-generated repair-prescriptive text was replaced with findings that state what was measured and refer causation and remedial scoping to a licensed P.E. "Joint separation probability (%)" became the **joint-stress index**, explicitly a comparative screening scale rather than a statistical probability. The license moved from MIT to proprietary.
+
+**v3.3.0 — The report matches the software.** § 7.0 Visit Comparison, the flagship v3 feature, had never actually printed in the PDF; it does now, and the report's Limitations & Certification section moved to § 8.0 so the on-screen and printed numbering agree. Cross-visit comparison now normalizes each visit against its own reference point before computing any rate, so a change of survey datum can no longer masquerade as structural movement. The PDF engine is bundled into the file, making offline field use real rather than nominal. See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 
 ---
 
@@ -79,21 +91,28 @@ Opinions expressed are professional inspection opinions exempted from profession
 
 ## Quick Start
 
+**Try it in the browser** — no download:
+
+- Application: <https://choij1104.github.io/foundation-forensics/foundation_forensics_v3.html>
+- Preloaded demonstration: <https://choij1104.github.io/foundation-forensics/foundation_forensics_v3_demo_preloaded.html>
+
+**Or run it locally:**
+
 ```
 # Download & open (no install)
-curl -O https://raw.githubusercontent.com/<owner>/foundation-forensics/main/foundation_forensics_v3.html
-open foundation_forensics_v3.html    # macOS
+curl -O https://raw.githubusercontent.com/choij1104/foundation-forensics/main/foundation_forensics_v3.html
+open foundation_forensics_v3.html     # macOS
 xdg-open foundation_forensics_v3.html # Linux
 start foundation_forensics_v3.html    # Windows
 ```
 
-Or just download `foundation_forensics_v3.html` and double-click. Any modern browser works. No account, no server, no internet after first load (jsPDF is CDN-loaded on first PDF export, then cached).
+Or just download `foundation_forensics_v3.html` and double-click. Any modern browser works. No account, no server, and — as of v3.3.0 — no network dependency at all: the PDF engine is bundled into the file, so report generation works on a tablet with no signal. Web fonts load from the network when it is there and fall back to system fonts when it is not.
 
 ---
 
 ## Screenshots
 
-*Screenshots included in `docs/screenshots/` are from the v2 baseline. v3-specific screenshots (visit bar, comparison section, evidence attachments) will be added after first field deployment.*
+*Screenshots in `docs/screenshots/` are from the v2 baseline and predate the forensic re-positioning — they show the older labels and the repair-oriented voice. v3 screenshots (visit bar, § 7.0 comparison, evidence attachments, settlement contours) are pending. For a current view of the software, open the [preloaded demonstration](https://choij1104.github.io/foundation-forensics/foundation_forensics_v3_demo_preloaded.html) instead.*
 
 ---
 
@@ -152,20 +171,33 @@ Any v2 project imported into v3 is automatically wrapped as a single **Initial E
 
 ```
 foundation-forensics/
-├── foundation_forensics_v3.html      # Main application (single file)
+├── index.html                             # GitHub Pages landing page
+├── foundation_forensics_v3.html           # Main application (single file)
+├── foundation_forensics_v3_demo_preloaded.html   # Built demo — do not hand-edit
+├── build_demo.js                          # Reproducible build for the demo file
+├── legacy/
+│   └── foundation_v2_demo_preloaded.html  # v2 demo, the build input for build_demo.js
 ├── docs/
-│   ├── overview.md                   # System overview
-│   ├── usage_guide.md                # User guide with multi-visit workflow
-│   ├── migration_from_v2.md          # v2 → v3 migration notes
-│   ├── forensic_positioning.md       # Business and regulatory positioning
+│   ├── overview.md                        # System overview
+│   ├── usage_guide.md                     # User guide with multi-visit workflow
+│   ├── migration_from_v2.md               # v2 → v3 migration notes
+│   ├── forensic_positioning.md            # Business and regulatory positioning
 │   └── screenshots/
 │       ├── dashboard.png
 │       ├── project_view.png
 │       └── plumbing_tab.png
 ├── CHANGELOG.md
 ├── LICENSE
+├── LICENSE_MIT_previous.txt               # The MIT terms that governed pre-3.2.0 releases
+├── setup_github.sh
 ├── .gitignore
 └── README.md
+```
+
+Rebuild the demo after any change to the application:
+
+```
+node build_demo.js     # reads legacy/foundation_v2_demo_preloaded.html + foundation_forensics_v3.html
 ```
 
 ---
@@ -178,11 +210,21 @@ foundation-forensics/
 - [x] Raw-data export for P.E. consultant review
 - [x] Forensic evaluator disclaimer (three legal frames)
 - [x] Automatic migration from v2 storage and JSON exports
-- [ ] Mobile-responsive layout refinements
-- [ ] Auto-generated recommendations from analysis + evidence data
+- [x] Mobile-responsive layout (v3.0.1)
+- [x] Discrete settlement bands and iso-settlement contours (v3.1.0)
+- [x] Site geology from USDA SSURGO, with embedded regional fallback (v3.1.0)
+- [x] Visual exhibits A/B/C for sub-slab plumbing (v3.0.2)
+- [x] § 7.0 Visit Comparison printed in the PDF report (v3.3.0)
+- [x] Fully offline PDF generation — engine bundled, no CDN (v3.3.0)
 - [ ] Photo annotation on plan view
 - [ ] Voice input for elevation readings
 - [ ] Multi-language support (Korean / Spanish)
+- [ ] Point-level uncertainty / instrument tolerance carried through the rate calculation
+
+**Deliberately excluded**, per [`docs/forensic_positioning.md`](docs/forensic_positioning.md): load calculation, soils analysis,
+and auto-generated remedial recommendations. Prescribing remediation is engineering judgment reserved to a licensed P.E., and
+building it into the tool would put the firm outside its scope of practice. (This item appeared on earlier roadmaps as
+"auto-generated recommendations"; it was removed in v3.3.0 rather than deferred.)
 
 ---
 
@@ -214,4 +256,4 @@ Built for the independent foundation evaluation workflow in Texas expansive-soil
 
 ---
 
-*Foundation Forensics v3.0 · 2026 · ASCE Level B Compliant · Independent Technical Documentation*
+*Foundation Forensics v3.3.0 · 2026 · ASCE Level B · Independent Technical Documentation*

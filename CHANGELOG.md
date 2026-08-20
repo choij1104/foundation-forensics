@@ -6,6 +6,87 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [3.3.0] — 2026-08-20
+
+### Fixed — the report did not match the software
+- **§ 7.0 Visit Comparison now prints in the PDF report.** The flagship v3 feature — multi-visit
+  movement rate — existed only on screen and in the raw CSV export; the PDF generator had no such
+  section, while the README, overview, and this changelog all described it as a report section.
+  The PDF now carries § 7.0 with visits compared, datum basis, movement-rate summary, peak
+  joint-stress index delta, interpretation, and the full per-point delta table.
+- **Section numbering collision resolved.** On-screen § 7.0 was Visit Comparison while the PDF's
+  § 7.0 was Limitations & Certification, so § 7.1–7.3 meant two different things depending on
+  where you read them. Limitations & Certification moved to § 8.0 and the table of contents was
+  corrected; the TOC also listed "5.0 Engineering Analysis" against a body heading of "5.0
+  Analysis" — a discrepancy that also read against the not-an-engineering-opinion frame.
+- **Non-WinAnsi characters rendered as mojibake in every PDF ever produced.** jsPDF's built-in
+  fonts are WinAnsi-encoded: the § 3.2 measurement table's `Δ` column header printed as `”`, and
+  the § 3.6 segment table's `FROM → TO` printed as `FROM !’ TO`. Affected literals were replaced,
+  and `pdf.text` / `pdf.splitTextToSize` are now wrapped in a central sanitizer so an out-of-set
+  character substitutes visibly instead of failing silently.
+
+### Fixed — cross-visit calculation
+- **A change of survey datum could masquerade as structural movement.** § 7.0 differenced raw
+  readings between visits. A relative elevation survey carries no absolute benchmark, so if the
+  reference point or instrument setup differed between visits, the whole grid shifted and the
+  shift was reported as movement. Each visit is now reduced to deviations from its own reference
+  point (the same `refMode` § 3.0 and § 5.0 classify against) before differencing, so only the
+  change in *shape* of the elevation field survives. The per-point table shows Δ raw alongside
+  Δ rel. datum, a stat box reports the reference shift that was removed, and a datum notice fires
+  when that shift reaches 0.25 in.
+- **Comparison math extracted to `computeVisitComparison()`**, called by both the on-screen § 7.0
+  and the PDF § 7.0, so the two cannot drift apart again. `peakJointStressIndex()` likewise
+  replaces the inline duplicate, and now restores `project` state in a `finally` block.
+
+### Fixed — demo build
+- **`build_demo.js` multiplied absolute elevation readings by 1.35** where it meant to grow each
+  point's deviation from the survey reference by 35%. The synthesized six-month monitoring visit
+  therefore sat ~35 in. above the baseline, and the briefing file — the build shown to property
+  owners, public adjusters, and counsel — reported 35.00 in. of movement at 5.886 in/month with a
+  "Rapid movement rate" banner. The growth is now applied to the deviation, and the demo reports
+  0.68 in. of shape change at 0.114 in/month over 181 days.
+- **The build is reproducible from a fresh clone.** `build_demo.js` read its v2 source from a
+  hardcoded `/mnt/project/` path that existed only on the original author's machine. The input now
+  resolves to `legacy/foundation_v2_demo_preloaded.html` relative to the script, overridable with
+  `FF_V2_DEMO`, and that file is committed.
+
+### Changed — offline operation is now real
+- **jsPDF 2.5.1 (MIT) is bundled into the application file.** It was loaded from cdnjs on first
+  PDF export, so a tablet with no signal — the actual field condition this tool is built for —
+  could not produce a report, despite "offline-capable" appearing in the README, the tagline, and
+  the comparison table. The license header is retained inline. Web fonts still load from Google
+  Fonts when the network is present and fall back to system stacks when it is not.
+
+### Changed — forensic positioning (language the v3.2.0 pass missed)
+- PDF cover **Principal Finding** classified 1.0–1.5 in. as "Significant Movement — Foundation
+  Repair Recommended" and >1.5 in. as "Critical Differential — Immediate Foundation Repair
+  Required". Both now state the measured range without prescribing work.
+- Property-owner summary headlines "REPAIR RECOMMENDED" / "REPAIR REQUIRED" became "EXCEEDS COMMON
+  TOLERANCE" / "CRITICAL MEASURED RANGE", and the corresponding bottom-line paragraph — which
+  ended "Repair before damage progresses is advised." — now refers the question of what work is
+  warranted to a licensed engineer.
+- § 3.6.3 findings no longer say a CCTV scope is indicated "before finalizing remediation scope"
+  or that "no plumbing intervention is indicated"; § 6.4 heading "Structural Remediation" now
+  matches its on-screen label, "Structural Recommendations".
+- Remaining **"joint risk" / "%" labels** from the v3.2.0 rename were carried over: § 7.0's "Peak
+  Joint Risk … 65% … Δ 1 pp" stat boxes, the § 3.6 screen table header and metric tile, the PDF
+  § 3.6.2 column header, the property-owner summary's "PLUMBING JOINT RISK 65%", and the raw
+  export's `joint_risk_pct` column (now `joint_stress_index`).
+
+### Added
+- **`index.html`** — a landing page for GitHub Pages. The Pages root returned 404 because no
+  index existed; the application was reachable only by typing the HTML filename directly.
+- **`.gitignore`** — the repository had none. Notably excludes project JSON exports, which contain
+  client names, property addresses, and inspection photographs.
+- **`legacy/foundation_v2_demo_preloaded.html`** — the demo build input, previously uncommitted.
+
+### Removed from the roadmap
+- **"Auto-generated recommendations from analysis + evidence data."** Generating remedial
+  recommendations is engineering judgment reserved to a licensed P.E. under Texas Occupations Code
+  Ch. 1001; shipping it would place the firm outside the scope of practice the rest of the product
+  is built to hold. Recorded as excluded rather than deferred, alongside load calculation and soils
+  analysis in `docs/forensic_positioning.md`.
+
 ## [3.2.0] — 2026-08-20
 
 ### Changed — forensic positioning (report language)
